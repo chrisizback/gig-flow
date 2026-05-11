@@ -5,321 +5,365 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GIG FLOW | Pro Profit Engine</title>
     <link rel="manifest" href="manifest.json">
-
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js')
-      .then(() => console.log("GIG FLOW: Service Worker Active"))
-      .catch(err => console.log("Service Worker Error", err));
-  }
-</script>
     <style>
         :root {
-            --bg: #0f172a;
-            --card: #1e293b;
-            --primary: #38bdf8;
-            --success: #4ade80;
-            --danger: #f87171;
-            --warning: #f59e0b;
-            --text: #f1f5f9;
-            --border: #334155;
+            --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #4ade80;
+            --danger: #f87171; --warning: #f59e0b; --text: #f1f5f9; --border: #334155;
         }
 
-        body {
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 10px;
-            display: flex;
-            justify-content: center;
-            min-height: 100vh;
-        }
+        body { font-family: 'Inter', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
+        .app-container { width: 100%; max-width: 440px; padding: 10px 10px 100px; display: none; position: relative; }
 
-        .app-container {
-            width: 100%;
-            max-width: 440px;
-            padding-bottom: 100px;
-        }
+        /* --- LOGIN SCREEN UI --- */
+        .auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 3000; padding: 20px; box-sizing: border-box; }
+        .auth-header { text-align: center; margin-bottom: 30px; }
+        .auth-header h1 { margin: 0; font-size: 3rem; color: var(--primary); font-weight: 950; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1; }
+        .auth-header .tagline { font-size: 0.8rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.3em; text-transform: uppercase; margin-top: 10px; }
+        .auth-card { background: var(--card); padding: 30px 20px; border-radius: 24px; border: 1px solid var(--border); width: 100%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
+        
+        .social-btn { width: 100%; background: transparent; border: 2px solid var(--border); color: var(--text); padding: 14px; border-radius: 16px; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; margin-bottom: 12px; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.2s; }
+        .social-btn:hover { border-color: #94a3b8; background: rgba(255,255,255,0.05); }
+        .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #64748b; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; }
+        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
+        .divider::before { margin-right: .5em; } .divider::after { margin-left: .5em; }
 
-        header { text-align: center; margin: 20px 0 25px; }
+        /* --- MAIN APP UI --- */
+        header { text-align: center; margin: 20px 0 25px; position: relative; }
         h1 { margin: 0; font-size: 2.6rem; color: var(--primary); font-weight: 950; letter-spacing: 0.05em; text-transform: uppercase; }
         .tagline { font-size: 0.7rem; font-weight: 800; opacity: 0.5; letter-spacing: 0.2em; text-transform: uppercase; }
+        .logout-btn { position: absolute; right: 0; top: 10px; font-size: 0.6rem; color: var(--danger); font-weight: 900; text-transform: uppercase; cursor: pointer; padding: 5px; border: 1px solid var(--danger); border-radius: 8px; }
 
-        /* Navigation Tabs */
-        .nav-bar {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90%;
-            max-width: 400px;
-            background: #1e293b;
-            border: 2px solid var(--border);
-            border-radius: 20px;
-            display: flex;
-            padding: 5px;
-            z-index: 1000;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-        }
-
-        .nav-btn {
-            flex: 1;
-            padding: 12px;
-            border-radius: 15px;
-            border: none;
-            background: transparent;
-            color: #94a3b8;
-            font-weight: 800;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-
+        .nav-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: #1e293b; border: 2px solid var(--border); border-radius: 20px; display: flex; padding: 5px; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
+        .nav-btn { flex: 1; padding: 12px; border-radius: 15px; border: none; background: transparent; color: #94a3b8; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
         .nav-btn.active { background: var(--primary); color: var(--bg); }
+        .tab-content { display: none; } .tab-content.active { display: block; }
 
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-
-        /* Components */
         .card { background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid var(--border); margin-bottom: 12px; }
         .section-label { font-size: 0.65rem; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
         .section-label::after { content: ""; height: 1px; background: var(--border); flex-grow: 1; }
 
         .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .group { margin-bottom: 12px; }
-        label { display: block; font-size: 0.6rem; font-weight: 800; margin-bottom: 5px; color: #94a3b8; text-transform: uppercase; }
-        
+        label { display: flex; align-items: center; font-size: 0.6rem; font-weight: 800; margin-bottom: 5px; color: #94a3b8; text-transform: uppercase; }
         input, select { width: 100%; padding: 14px; border-radius: 12px; background: #0f172a; color: #fff; border: 2px solid var(--border); font-weight: 700; font-size: 1.1rem; outline: none; box-sizing: border-box; }
-        input:focus { border-color: var(--primary); }
+        input:focus, select:focus { border-color: var(--primary); }
 
-        /* Profit Display */
+        .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); color: var(--primary); font-size: 0.65rem; font-weight: 900; margin-left: 6px; cursor: help; position: relative; text-transform: lowercase; }
+        .info-icon::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 180px; background: #020617; border: 1px solid var(--primary); color: #f1f5f9; padding: 10px 12px; border-radius: 12px; font-size: 0.65rem; font-weight: 700; opacity: 0; visibility: hidden; transition: all 0.2s ease-out; z-index: 1000; text-transform: none; letter-spacing: normal; box-shadow: 0 10px 25px rgba(0,0,0,0.6); text-align: center; line-height: 1.4; pointer-events: none; }
+        .info-icon:hover::after, .info-icon:active::after { opacity: 1; visibility: visible; bottom: 130%; }
+
         .profit-hero { text-align: center; padding: 30px 20px; background: #0f172a; border: 2px solid var(--primary); border-radius: 28px; margin: 15px 0; }
         .profit-hero .val { font-size: 4rem; font-weight: 950; color: var(--success); display: block; line-height: 1; margin: 5px 0; }
-        .hourly-txt { font-size: 0.9rem; font-weight: 800; color: #94a3b8; }
-
+        
         .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
         .metric { background: #0f172a; padding: 14px; border-radius: 18px; border: 1px solid var(--border); text-align: center; }
         .metric .v { display: block; font-weight: 800; font-size: 1.1rem; }
         .metric .l { font-size: 0.55rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
 
-        .btn-main { width: 100%; background: var(--primary); color: var(--bg); border: none; padding: 16px; border-radius: 16px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 10px; }
+        .btn-main { width: 100%; background: var(--primary); color: var(--bg); border: none; padding: 16px; border-radius: 16px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 10px; transition: 0.2s; }
         .btn-outline { width: 100%; background: transparent; border: 2px solid var(--border); color: #94a3b8; padding: 12px; border-radius: 14px; font-weight: 800; text-transform: uppercase; font-size: 0.7rem; cursor: pointer; margin-top: 10px; }
 
-        /* History Styling */
+        /* --- HISTORY & FILTER UI --- */
         .history-item { background: var(--card); padding: 16px; border-radius: 20px; margin-bottom: 10px; border: 1px solid var(--border); border-left: 6px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
         .h-details { font-size: 0.7rem; color: #94a3b8; font-weight: 700; }
         .h-profit { font-weight: 900; color: var(--success); font-size: 1.2rem; }
-        .export-bar { text-align: center; margin-bottom: 20px; }
+        .action-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        
+        /* Bottom Sheet Filter Menu */
+        .filter-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1999; display: none; opacity: 0; transition: opacity 0.3s; }
+        .filter-drawer { position: fixed; bottom: -100%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 440px; background: var(--card); border-top: 1px solid var(--border); z-index: 2000; border-radius: 32px 32px 0 0; padding: 25px 20px; box-sizing: border-box; transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5); }
+        .filter-drawer.active { bottom: 0; }
+        .filter-backdrop.active { display: block; opacity: 1; }
+        .drawer-handle { width: 40px; height: 5px; background: var(--border); border-radius: 10px; margin: 0 auto 20px; }
     </style>
 </head>
 <body>
 
-<div class="app-container">
+<div class="auth-screen" id="authScreen">
+    <div class="auth-header">
+        <h1>GIG FLOW</h1>
+        <div class="tagline">Cloud Sync Enabled</div>
+    </div>
+    <div class="auth-card">
+        <div class="group"><label>Email Address</label><input type="email" id="emailIn" placeholder="driver@example.com"></div>
+        <div class="group"><label>Password</label><input type="password" id="passIn" placeholder="••••••••"></div>
+        <button class="btn-main" onclick="window.loginUser()" style="margin-top: 15px;">Sign In Securely</button>
+        <div style="text-align: center; margin-top: 20px; font-size: 0.7rem; color: #94a3b8; font-weight: 700;">
+            Need an account? <span style="color: var(--primary); cursor: pointer;" onclick="window.signupUser()">Sign Up (Pro)</span>
+        </div>
+    </div>
+</div>
+
+<div class="app-container" id="appMain">
     <header>
         <h1>GIG FLOW</h1>
         <div class="tagline">Profit Engine Pro</div>
+        <div class="logout-btn" onclick="window.logoutUser()">Logout</div>
     </header>
 
     <div id="calcTab" class="tab-content active">
         <div class="card">
             <div class="section-label">Command Center</div>
             <div class="group">
-                <label>Platform</label>
+                <label>Platform <span class="info-icon" data-tooltip="The specific delivery or gig app you are working for right now.">i</span></label>
                 <select id="platform">
                     <option value="Uber">Uber</option>
                     <option value="DoorDash">DoorDash</option>
-                    <option value="Instacart">Instacart</option>
                     <option value="Amazon Flex">Amazon Flex</option>
                     <option value="Walmart Spark">Walmart Spark</option>
-                    <option value="Other">Other</option>
                 </select>
             </div>
-            <div class="group">
-                <label>Earnings ($)</label>
-                <input type="number" id="gross" placeholder="0.00" oninput="run()">
-            </div>
+            <div class="group"><label>Earnings ($) <span class="info-icon" data-tooltip="The total dollar amount the app paid you.">i</span></label><input type="number" id="gross" placeholder="0.00" oninput="window.runMath()"></div>
             <div class="input-grid">
-                <div class="group"><label>Active Mi</label><input type="number" id="activeIn" placeholder="0.0" oninput="run()"></div>
-                <div class="group"><label>Deadhead Mi</label><input type="number" id="deadIn" placeholder="0.0" oninput="run()"></div>
-                <div class="group"><label>Wait (min)</label><input type="number" id="waitIn" placeholder="0" oninput="run()"></div>
-                <div class="group"><label>Hours</label><input type="number" id="hoursIn" placeholder="0.0" oninput="run()"></div>
+                <div class="group"><label>Active Mi <span class="info-icon" data-tooltip="Miles driven actively completing an order.">i</span></label><input type="number" id="activeIn" placeholder="0" oninput="window.runMath()"></div>
+                <div class="group"><label>Deadhead Mi <span class="info-icon" data-tooltip="Unpaid miles driven while returning to zone.">i</span></label><input type="number" id="deadIn" placeholder="0" oninput="window.runMath()"></div>
+                <div class="group"><label>Wait (min) <span class="info-icon" data-tooltip="Unpaid time spent waiting at a restaurant.">i</span></label><input type="number" id="waitIn" placeholder="0" oninput="window.runMath()"></div>
+                <div class="group"><label>Hours <span class="info-icon" data-tooltip="Total hours you were online this shift.">i</span></label><input type="number" id="hoursIn" placeholder="0" oninput="window.runMath()"></div>
             </div>
-            <button class="btn-main" onclick="archive()">Archive Shift</button>
+            <button class="btn-main" onclick="window.archiveCloudShift()">Archive to Cloud</button>
         </div>
 
         <div class="profit-hero">
-            <label style="color: var(--primary); font-size: 0.7rem; font-weight: 900; letter-spacing: 0.1em;">NET PROFIT</label>
+            <label style="justify-content: center; color: var(--primary); font-size: 0.7rem; font-weight: 900; letter-spacing: 0.1em;">NET PROFIT</label>
             <span id="pDisp" class="val">$0.00</span>
-            <div id="hourlyTag" class="hourly-txt">$0.00/hr</div>
+            <div id="hourlyTag" style="font-size: 0.9rem; font-weight: 800; color: #94a3b8;">$0.00/hr</div>
         </div>
 
         <div class="metric-grid">
-            <div class="metric"><span class="l">Distance</span><span id="mileDisp" class="v">0.00</span></div>
-            <div class="metric"><span class="l">Gas Expense</span><span id="gasDisp" class="v" style="color: var(--danger)">$0.00</span></div>
-            <div class="metric"><span class="l">Repair Fund</span><span id="maintDisp" class="v" style="color: var(--warning)">$0.00</span></div>
-            <div class="metric"><span class="l">Tax Write-off</span><span id="irsDisp" class="v" style="color: var(--primary)">$0.00</span></div>
+            <div class="metric"><span class="l">Distance</span><span id="mileDisp" class="v">0.0</span></div>
+            <div class="metric"><span class="l">Gas</span><span id="gasDisp" class="v" style="color: var(--danger)">$0.00</span></div>
         </div>
-
-        <div class="card" style="margin-top: 20px; opacity: 0.8;">
+        
+        <div class="card" style="margin-top: 15px; opacity: 0.8;">
             <div class="section-label">Vehicle Profile</div>
             <div class="input-grid">
-                <div class="group"><label>Gas Price</label><input type="number" id="setGas" value="5.00" oninput="run()"></div>
-                <div class="group"><label>Vehicle MPG</label><input type="number" id="setMPG" value="25" oninput="run()"></div>
-                <div class="group" style="grid-column: span 2;"><label>Repair Fund ($ per mile)</label><input type="number" id="setMaint" value="0.05" step="0.01" oninput="run()"></div>
+                <div class="group" style="margin:0;"><label>Gas Price</label><input type="number" id="setGas" value="5.00" oninput="window.runMath()"></div>
+                <div class="group" style="margin:0;"><label>MPG</label><input type="number" id="setMPG" value="25" oninput="window.runMath()"></div>
+                <div class="group" style="grid-column: span 2;"><label>Repair Fund ($/mi)</label><input type="number" id="setMaint" value="0.05" step="0.01" oninput="window.runMath()"></div>
             </div>
-            <button id="gpsBtn" class="btn-outline" onclick="toggleGPS()">GPS Sync Backup</button>
         </div>
     </div>
 
     <div id="histTab" class="tab-content">
-        <div class="export-bar">
-            <button class="btn-main" style="width: auto; padding: 12px 25px; font-size: 0.7rem;" onclick="exportCSV()">Export Tax Report (.CSV)</button>
+        <div class="action-bar">
+            <button class="btn-outline" style="margin:0; border-color: var(--primary); color: var(--text);" onclick="window.toggleFilterMenu()">Sort & Filter ⚙️</button>
         </div>
+        <div id="filterStatus" style="font-size: 0.65rem; color: var(--primary); font-weight: 800; text-transform: uppercase; margin-bottom: 10px; text-align: center;">Showing: All Shifts</div>
         <div id="historyList"></div>
-        <button class="btn-outline" style="color: var(--danger); border-color: var(--danger); margin-top: 30px;" onclick="clearHistory()">Clear History</button>
     </div>
 
     <div class="nav-bar">
-        <button class="nav-btn active" onclick="switchTab('calcTab', this)">Calculator</button>
-        <button class="nav-btn" onclick="switchTab('histTab', this)">History</button>
+        <button class="nav-btn active" onclick="window.switchAppTab('calcTab', this)">Calculator</button>
+        <button class="nav-btn" onclick="window.switchAppTab('histTab', this)">History</button>
     </div>
 </div>
 
-<script>
-    let gpsMiles = 0;
-    let isGPS = false;
-    let watchId = null;
+<div class="filter-backdrop" id="filterBackdrop" onclick="window.toggleFilterMenu()"></div>
+<div class="filter-drawer" id="filterDrawer">
+    <div class="drawer-handle"></div>
+    <div class="section-label">Filter & Sort Cloud Data</div>
+    <div class="group">
+        <label>Platform Filter</label>
+        <select id="filterPlat">
+            <option value="All">All Platforms</option>
+            <option value="Uber">Uber</option>
+            <option value="DoorDash">DoorDash</option>
+            <option value="Amazon Flex">Amazon Flex</option>
+            <option value="Walmart Spark">Walmart Spark</option>
+        </select>
+    </div>
+    <div class="group">
+        <label>Sort Order</label>
+        <select id="filterSort">
+            <option value="newest">Newest First (Default)</option>
+            <option value="oldest">Oldest First</option>
+            <option value="profitHigh">Highest Profit</option>
+            <option value="profitLow">Lowest Profit</option>
+        </select>
+    </div>
+    <div class="input-grid" style="margin-top: 20px;">
+        <button class="btn-outline" style="margin:0;" onclick="window.resetCloudFilters()">Reset</button>
+        <button class="btn-main" style="margin:0;" onclick="window.applyCloudFilters()">Apply Filters</button>
+    </div>
+</div>
 
-    function switchTab(id, btn) {
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+   const firebaseConfig = {
+  apiKey: "AIzaSyCZlSBbi7lZLBctmfHUdRrOARHpm7T93Ow",
+  authDomain: "gig-flow-5930d.firebaseapp.com",
+  projectId: "gig-flow-5930d",
+  storageBucket: "gig-flow-5930d.firebasestorage.app",
+  messagingSenderId: "876072390705",
+  appId: "1:876072390705:web:cafdf507a03029981e4510"
+};
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+
+    // Listen for Login/Logout state changes
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            currentUser = user;
+            document.getElementById('authScreen').style.display = 'none';
+            document.getElementById('appMain').style.display = 'block';
+            window.runMath();
+        } else {
+            currentUser = null;
+            document.getElementById('authScreen').style.display = 'flex';
+            document.getElementById('appMain').style.display = 'none';
+        }
+    });
+
+    // --- Authentication Functions ---
+    window.loginUser = async function() {
+        const email = document.getElementById('emailIn').value;
+        const pass = document.getElementById('passIn').value;
+        try { await signInWithEmailAndPassword(auth, email, pass); } 
+        catch (error) { alert("Login Error: " + error.message); }
+    };
+
+    window.signupUser = async function() {
+        const email = document.getElementById('emailIn').value;
+        const pass = document.getElementById('passIn').value;
+        if(pass.length < 6) return alert("Password must be 6+ characters.");
+        try { 
+            await createUserWithEmailAndPassword(auth, email, pass); 
+            alert("Pro Account Created!"); 
+        } catch (error) { alert("Signup Error: " + error.message); }
+    };
+
+    window.logoutUser = function() { signOut(auth); };
+
+    // --- UI & Math Logic ---
+    window.toggleFilterMenu = function() {
+        document.getElementById('filterDrawer').classList.toggle('active');
+        document.getElementById('filterBackdrop').classList.toggle('active');
+    };
+
+    window.switchAppTab = function(id, btn) {
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
         document.getElementById(id).classList.add('active');
         btn.classList.add('active');
-        if(id === 'histTab') renderHistory();
-    }
+        if(id === 'histTab') window.fetchCloudHistory();
+    };
 
-    function run() {
+    window.runMath = function() {
         const gross = parseFloat(document.getElementById('gross').value) || 0;
-        const active = (parseFloat(document.getElementById('activeIn').value) || 0) + gpsMiles;
-        const dead = parseFloat(document.getElementById('deadIn').value) || 0;
-        const wait = parseFloat(document.getElementById('waitIn').value) || 0;
+        const dist = (parseFloat(document.getElementById('activeIn').value) || 0) + (parseFloat(document.getElementById('deadIn').value) || 0);
         const hours = parseFloat(document.getElementById('hoursIn').value) || 0;
+        const wait = parseFloat(document.getElementById('waitIn').value) || 0;
         
-        const gp = parseFloat(document.getElementById('setGas').value) || 5;
-        const mpg = parseFloat(document.getElementById('setMPG').value) || 25;
-        const mr = parseFloat(document.getElementById('setMaint').value) || 0.05;
-
-        const totalMiles = active + dead;
-        const gasCost = totalMiles * (gp / mpg);
-        const maint = totalMiles * mr;
+        const gasCost = dist * ((parseFloat(document.getElementById('setGas').value) || 5) / (parseFloat(document.getElementById('setMPG').value) || 25));
+        const maint = dist * (parseFloat(document.getElementById('setMaint').value) || 0.05);
         const profit = gross - gasCost - maint;
         const hourly = (hours + (wait/60)) > 0 ? profit / (hours + (wait/60)) : 0;
-        const irs = totalMiles * 0.725;
 
         document.getElementById('pDisp').innerText = `$${profit.toFixed(2)}`;
         document.getElementById('hourlyTag').innerText = `$${hourly.toFixed(2)}/hr`;
-        document.getElementById('mileDisp').innerText = totalMiles.toFixed(2);
+        document.getElementById('mileDisp').innerText = dist.toFixed(1);
         document.getElementById('gasDisp').innerText = `$${gasCost.toFixed(2)}`;
-        document.getElementById('maintDisp').innerText = `$${maint.toFixed(2)}`;
-        document.getElementById('irsDisp').innerText = `$${irs.toFixed(2)}`;
         
-        return { profit, totalMiles, gasCost, irs };
-    }
+        return { profit, dist };
+    };
 
-    function archive() {
-        const data = run();
+    // --- Database Functions ---
+    window.archiveCloudShift = async function() {
+        if (!currentUser) return alert("You must be logged in.");
+        const data = window.runMath();
         const gross = document.getElementById('gross').value;
         if (!gross || gross <= 0) return alert("Enter earnings first!");
 
-        const trip = {
-            id: Date.now(),
+        const tripData = {
+            uid: currentUser.uid,          // Securely ties the shift to the logged-in user
+            timestamp: Date.now(),         // For sorting
             date: new Date().toLocaleDateString(),
             plat: document.getElementById('platform').value,
             gross: parseFloat(gross).toFixed(2),
             profit: data.profit.toFixed(2),
-            miles: data.totalMiles.toFixed(2)
+            miles: data.dist.toFixed(1)
         };
 
-        let history = JSON.parse(localStorage.getItem('gigflow_v44_final') || '[]');
-        history.unshift(trip);
-        localStorage.setItem('gigflow_v44_final', JSON.stringify(history));
+        try {
+            // Push to Firebase Cloud Firestore
+            await addDoc(collection(db, "shifts"), tripData);
+            
+            // Clear inputs
+            ['gross', 'activeIn', 'deadIn', 'waitIn', 'hoursIn'].forEach(id => document.getElementById(id).value = '');
+            window.runMath();
+            alert("Shift securely archived to the Cloud! ☁️");
+        } catch (error) { alert("Error saving shift: " + error.message); }
+    };
 
-        // Clear only trip-specific fields
-        ['gross', 'activeIn', 'deadIn', 'waitIn', 'hoursIn'].forEach(id => document.getElementById(id).value = '');
-        gpsMiles = 0;
-        run();
-        alert("Shift Archived!");
-    }
-
-    function renderHistory() {
-        const history = JSON.parse(localStorage.getItem('gigflow_v44_final') || '[]');
+    window.fetchCloudHistory = async function() {
+        if (!currentUser) return;
         const list = document.getElementById('historyList');
-        if (history.length === 0) {
-            list.innerHTML = `<div style="text-align:center; opacity:0.3; padding:50px;">No shifts recorded yet.</div>`;
-            return;
-        }
-        list.innerHTML = history.map(t => `
-            <div class="history-item">
-                <div>
-                    <div class="h-details">${t.date}</div>
-                    <div style="font-weight:900; color:var(--primary);">${t.plat}</div>
-                    <div class="h-details">$${t.gross} Gross • ${t.miles} mi</div>
+        list.innerHTML = `<div style="text-align:center; padding:50px; color:var(--primary); font-weight:800;">Syncing Cloud Data...</div>`;
+
+        try {
+            // Query only the current user's shifts
+            const q = query(collection(db, "shifts"), where("uid", "==", currentUser.uid));
+            const querySnapshot = await getDocs(q);
+            
+            let history = [];
+            querySnapshot.forEach((doc) => { history.push(doc.data()); });
+
+            // Apply Filters Client-Side
+            const platFilter = document.getElementById('filterPlat').value;
+            const sortFilter = document.getElementById('filterSort').value;
+            const status = document.getElementById('filterStatus');
+
+            if (platFilter !== 'All') {
+                history = history.filter(t => t.plat === platFilter);
+                status.innerText = `Showing: ${platFilter} Only`;
+            } else { status.innerText = `Showing: All Platforms`; }
+
+            // Sort Engine
+            history.sort((a, b) => b.timestamp - a.timestamp); // Default Newest
+            if (sortFilter === 'oldest') history.reverse();
+            if (sortFilter === 'profitHigh') history.sort((a, b) => parseFloat(b.profit) - parseFloat(a.profit));
+            if (sortFilter === 'profitLow') history.sort((a, b) => parseFloat(a.profit) - parseFloat(b.profit));
+
+            if (history.length === 0) {
+                list.innerHTML = `<div style="text-align:center; opacity:0.3; padding:50px;">No shifts found in the cloud.</div>`;
+                return;
+            }
+
+            // Render
+            list.innerHTML = history.map(t => `
+                <div class="history-item">
+                    <div>
+                        <div class="h-details">${t.date}</div>
+                        <div style="font-weight:900; color:var(--primary);">${t.plat}</div>
+                        <div class="h-details">$${t.gross} Gross • ${t.miles} mi</div>
+                    </div>
+                    <div class="h-profit">+$${t.profit}</div>
                 </div>
-                <div class="h-profit">+$${t.profit}</div>
-            </div>
-        `).join('');
-    }
+            `).join('');
 
-    function exportCSV() {
-        const history = JSON.parse(localStorage.getItem('gigflow_v44_final') || '[]');
-        if (history.length === 0) return alert("Nothing to export!");
-        let csv = "Date,Platform,Gross,NetProfit,Miles\n";
-        history.forEach(t => { csv += `${t.date},${t.plat},${t.gross},${t.profit},${t.miles}\n`; });
-        const blob = new Blob([csv], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.setAttribute('href', url);
-        a.setAttribute('download', 'GIGFLOW_Tax_Report.csv');
-        a.click();
-    }
-
-    function clearHistory() {
-        if(confirm("Wipe all shift history?")) { localStorage.removeItem('gigflow_v44_final'); renderHistory(); }
-    }
-
-    function toggleGPS() {
-        const btn = document.getElementById('gpsBtn');
-        if (!isGPS) {
-            isGPS = true;
-            btn.innerText = "GPS ON";
-            btn.style.color = "var(--success)";
-            let last = null;
-            watchId = navigator.geolocation.watchPosition(pos => {
-                if(last) {
-                    const d = calcDist(last.coords.latitude, last.coords.longitude, pos.coords.latitude, pos.coords.longitude);
-                    if(d > 0.01) { gpsMiles += d; run(); }
-                }
-                last = pos;
-            });
-        } else {
-            isGPS = false;
-            btn.innerText = "GPS Sync Backup";
-            btn.style.color = "#94a3b8";
-            navigator.geolocation.clearWatch(watchId);
+        } catch (error) { 
+            list.innerHTML = `<div style="text-align:center; color:var(--danger);">Error syncing data. Check your connection.</div>`;
+            console.error("Firebase fetch error: ", error); 
         }
-    }
+    };
 
-    function calcDist(lat1, lon1, lat2, lon2) {
-        const R = 3958.8; // Earth radius miles
-        const dLat = (lat2-lat1) * Math.PI/180;
-        const dLon = (lon2-lon1) * Math.PI/180;
-        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
-        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
-    }
+    window.applyCloudFilters = function() { window.toggleFilterMenu(); window.fetchCloudHistory(); };
+    window.resetCloudFilters = function() {
+        document.getElementById('filterPlat').value = 'All';
+        document.getElementById('filterSort').value = 'newest';
+        window.applyCloudFilters();
+    };
 
-    window.onload = run;
+    // Initialize math on load
+    window.onload = window.runMath;
 </script>
 </body>
 </html>
