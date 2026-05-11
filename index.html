@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GIG FLOW | Pro Profit Engine</title>
+    <link rel="manifest" href="manifest.json">
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js')
+      .then(() => console.log("GIG FLOW: Service Worker Active"))
+      .catch(err => console.log("Service Worker Error", err));
+  }
+</script>
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #38bdf8;
+            --success: #4ade80;
+            --danger: #f87171;
+            --warning: #f59e0b;
+            --text: #f1f5f9;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 440px;
+            padding-bottom: 100px;
+        }
+
+        header { text-align: center; margin: 20px 0 25px; }
+        h1 { margin: 0; font-size: 2.6rem; color: var(--primary); font-weight: 950; letter-spacing: 0.05em; text-transform: uppercase; }
+        .tagline { font-size: 0.7rem; font-weight: 800; opacity: 0.5; letter-spacing: 0.2em; text-transform: uppercase; }
+
+        /* Navigation Tabs */
+        .nav-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: #1e293b;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            display: flex;
+            padding: 5px;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 15px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-weight: 800;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .nav-btn.active { background: var(--primary); color: var(--bg); }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* Components */
+        .card { background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid var(--border); margin-bottom: 12px; }
+        .section-label { font-size: 0.65rem; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+        .section-label::after { content: ""; height: 1px; background: var(--border); flex-grow: 1; }
+
+        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .group { margin-bottom: 12px; }
+        label { display: block; font-size: 0.6rem; font-weight: 800; margin-bottom: 5px; color: #94a3b8; text-transform: uppercase; }
+        
+        input, select { width: 100%; padding: 14px; border-radius: 12px; background: #0f172a; color: #fff; border: 2px solid var(--border); font-weight: 700; font-size: 1.1rem; outline: none; box-sizing: border-box; }
+        input:focus { border-color: var(--primary); }
+
+        /* Profit Display */
+        .profit-hero { text-align: center; padding: 30px 20px; background: #0f172a; border: 2px solid var(--primary); border-radius: 28px; margin: 15px 0; }
+        .profit-hero .val { font-size: 4rem; font-weight: 950; color: var(--success); display: block; line-height: 1; margin: 5px 0; }
+        .hourly-txt { font-size: 0.9rem; font-weight: 800; color: #94a3b8; }
+
+        .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        .metric { background: #0f172a; padding: 14px; border-radius: 18px; border: 1px solid var(--border); text-align: center; }
+        .metric .v { display: block; font-weight: 800; font-size: 1.1rem; }
+        .metric .l { font-size: 0.55rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+
+        .btn-main { width: 100%; background: var(--primary); color: var(--bg); border: none; padding: 16px; border-radius: 16px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 10px; }
+        .btn-outline { width: 100%; background: transparent; border: 2px solid var(--border); color: #94a3b8; padding: 12px; border-radius: 14px; font-weight: 800; text-transform: uppercase; font-size: 0.7rem; cursor: pointer; margin-top: 10px; }
+
+        /* History Styling */
+        .history-item { background: var(--card); padding: 16px; border-radius: 20px; margin-bottom: 10px; border: 1px solid var(--border); border-left: 6px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
+        .h-details { font-size: 0.7rem; color: #94a3b8; font-weight: 700; }
+        .h-profit { font-weight: 900; color: var(--success); font-size: 1.2rem; }
+        .export-bar { text-align: center; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <header>
+        <h1>GIG FLOW</h1>
+        <div class="tagline">Profit Engine Pro</div>
+    </header>
+
+    <div id="calcTab" class="tab-content active">
+        <div class="card">
+            <div class="section-label">Command Center</div>
+            <div class="group">
+                <label>Platform</label>
+                <select id="platform">
+                    <option value="Uber">Uber</option>
+                    <option value="DoorDash">DoorDash</option>
+                    <option value="Instacart">Instacart</option>
+                    <option value="Amazon Flex">Amazon Flex</option>
+                    <option value="Walmart Spark">Walmart Spark</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
+            <div class="group">
+                <label>Earnings ($)</label>
+                <input type="number" id="gross" placeholder="0.00" oninput="run()">
+            </div>
+            <div class="input-grid">
+                <div class="group"><label>Active Mi</label><input type="number" id="activeIn" placeholder="0.0" oninput="run()"></div>
+                <div class="group"><label>Deadhead Mi</label><input type="number" id="deadIn" placeholder="0.0" oninput="run()"></div>
+                <div class="group"><label>Wait (min)</label><input type="number" id="waitIn" placeholder="0" oninput="run()"></div>
+                <div class="group"><label>Hours</label><input type="number" id="hoursIn" placeholder="0.0" oninput="run()"></div>
+            </div>
+            <button class="btn-main" onclick="archive()">Archive Shift</button>
+        </div>
+
+        <div class="profit-hero">
+            <label style="color: var(--primary); font-size: 0.7rem; font-weight: 900; letter-spacing: 0.1em;">NET PROFIT</label>
+            <span id="pDisp" class="val">$0.00</span>
+            <div id="hourlyTag" class="hourly-txt">$0.00/hr</div>
+        </div>
+
+        <div class="metric-grid">
+            <div class="metric"><span class="l">Distance</span><span id="mileDisp" class="v">0.00</span></div>
+            <div class="metric"><span class="l">Gas Expense</span><span id="gasDisp" class="v" style="color: var(--danger)">$0.00</span></div>
+            <div class="metric"><span class="l">Repair Fund</span><span id="maintDisp" class="v" style="color: var(--warning)">$0.00</span></div>
+            <div class="metric"><span class="l">Tax Write-off</span><span id="irsDisp" class="v" style="color: var(--primary)">$0.00</span></div>
+        </div>
+
+        <div class="card" style="margin-top: 20px; opacity: 0.8;">
+            <div class="section-label">Vehicle Profile</div>
+            <div class="input-grid">
+                <div class="group"><label>Gas Price</label><input type="number" id="setGas" value="5.00" oninput="run()"></div>
+                <div class="group"><label>Vehicle MPG</label><input type="number" id="setMPG" value="25" oninput="run()"></div>
+                <div class="group" style="grid-column: span 2;"><label>Repair Fund ($ per mile)</label><input type="number" id="setMaint" value="0.05" step="0.01" oninput="run()"></div>
+            </div>
+            <button id="gpsBtn" class="btn-outline" onclick="toggleGPS()">GPS Sync Backup</button>
+        </div>
+    </div>
+
+    <div id="histTab" class="tab-content">
+        <div class="export-bar">
+            <button class="btn-main" style="width: auto; padding: 12px 25px; font-size: 0.7rem;" onclick="exportCSV()">Export Tax Report (.CSV)</button>
+        </div>
+        <div id="historyList"></div>
+        <button class="btn-outline" style="color: var(--danger); border-color: var(--danger); margin-top: 30px;" onclick="clearHistory()">Clear History</button>
+    </div>
+
+    <div class="nav-bar">
+        <button class="nav-btn active" onclick="switchTab('calcTab', this)">Calculator</button>
+        <button class="nav-btn" onclick="switchTab('histTab', this)">History</button>
+    </div>
+</div>
+
+<script>
+    let gpsMiles = 0;
+    let isGPS = false;
+    let watchId = null;
+
+    function switchTab(id, btn) {
+        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(id).classList.add('active');
+        btn.classList.add('active');
+        if(id === 'histTab') renderHistory();
+    }
+
+    function run() {
+        const gross = parseFloat(document.getElementById('gross').value) || 0;
+        const active = (parseFloat(document.getElementById('activeIn').value) || 0) + gpsMiles;
+        const dead = parseFloat(document.getElementById('deadIn').value) || 0;
+        const wait = parseFloat(document.getElementById('waitIn').value) || 0;
+        const hours = parseFloat(document.getElementById('hoursIn').value) || 0;
+        
+        const gp = parseFloat(document.getElementById('setGas').value) || 5;
+        const mpg = parseFloat(document.getElementById('setMPG').value) || 25;
+        const mr = parseFloat(document.getElementById('setMaint').value) || 0.05;
+
+        const totalMiles = active + dead;
+        const gasCost = totalMiles * (gp / mpg);
+        const maint = totalMiles * mr;
+        const profit = gross - gasCost - maint;
+        const hourly = (hours + (wait/60)) > 0 ? profit / (hours + (wait/60)) : 0;
+        const irs = totalMiles * 0.725;
+
+        document.getElementById('pDisp').innerText = `$${profit.toFixed(2)}`;
+        document.getElementById('hourlyTag').innerText = `$${hourly.toFixed(2)}/hr`;
+        document.getElementById('mileDisp').innerText = totalMiles.toFixed(2);
+        document.getElementById('gasDisp').innerText = `$${gasCost.toFixed(2)}`;
+        document.getElementById('maintDisp').innerText = `$${maint.toFixed(2)}`;
+        document.getElementById('irsDisp').innerText = `$${irs.toFixed(2)}`;
+        
+        return { profit, totalMiles, gasCost, irs };
+    }
+
+    function archive() {
+        const data = run();
+        const gross = document.getElementById('gross').value;
+        if (!gross || gross <= 0) return alert("Enter earnings first!");
+
+        const trip = {
+            id: Date.now(),
+            date: new Date().toLocaleDateString(),
+            plat: document.getElementById('platform').value,
+            gross: parseFloat(gross).toFixed(2),
+            profit: data.profit.toFixed(2),
+            miles: data.totalMiles.toFixed(2)
+        };
+
+        let history = JSON.parse(localStorage.getItem('gigflow_v44_final') || '[]');
+        history.unshift(trip);
+        localStorage.setItem('gigflow_v44_final', JSON.stringify(history));
+
+        // Clear only trip-specific fields
+        ['gross', 'activeIn', 'deadIn', 'waitIn', 'hoursIn'].forEach(id => document.getElementById(id).value = '');
+        gpsMiles = 0;
+        run();
+        alert("Shift Archived!");
+    }
+
+    function renderHistory() {
+        const history = JSON.parse(localStorage.getItem('gigflow_v44_final') || '[]');
+        const list = document.getElementById('historyList');
+        if (history.length === 0) {
+            list.innerHTML = `<div style="text-align:center; opacity:0.3; padding:50px;">No shifts recorded yet.</div>`;
+            return;
+        }
+        list.innerHTML = history.map(t => `
+            <div class="history-item">
+                <div>
+                    <div class="h-details">${t.date}</div>
+                    <div style="font-weight:900; color:var(--primary);">${t.plat}</div>
+                    <div class="h-details">$${t.gross} Gross • ${t.miles} mi</div>
+                </div>
+                <div class="h-profit">+$${t.profit}</div>
+            </div>
+        `).join('');
+    }
+
+    function exportCSV() {
+        const history = JSON.parse(localStorage.getItem('gigflow_v44_final') || '[]');
+        if (history.length === 0) return alert("Nothing to export!");
+        let csv = "Date,Platform,Gross,NetProfit,Miles\n";
+        history.forEach(t => { csv += `${t.date},${t.plat},${t.gross},${t.profit},${t.miles}\n`; });
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('href', url);
+        a.setAttribute('download', 'GIGFLOW_Tax_Report.csv');
+        a.click();
+    }
+
+    function clearHistory() {
+        if(confirm("Wipe all shift history?")) { localStorage.removeItem('gigflow_v44_final'); renderHistory(); }
+    }
+
+    function toggleGPS() {
+        const btn = document.getElementById('gpsBtn');
+        if (!isGPS) {
+            isGPS = true;
+            btn.innerText = "GPS ON";
+            btn.style.color = "var(--success)";
+            let last = null;
+            watchId = navigator.geolocation.watchPosition(pos => {
+                if(last) {
+                    const d = calcDist(last.coords.latitude, last.coords.longitude, pos.coords.latitude, pos.coords.longitude);
+                    if(d > 0.01) { gpsMiles += d; run(); }
+                }
+                last = pos;
+            });
+        } else {
+            isGPS = false;
+            btn.innerText = "GPS Sync Backup";
+            btn.style.color = "#94a3b8";
+            navigator.geolocation.clearWatch(watchId);
+        }
+    }
+
+    function calcDist(lat1, lon1, lat2, lon2) {
+        const R = 3958.8; // Earth radius miles
+        const dLat = (lat2-lat1) * Math.PI/180;
+        const dLon = (lon2-lon1) * Math.PI/180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) + Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2) * Math.sin(dLon/2);
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    window.onload = run;
+</script>
+</body>
+</html>
