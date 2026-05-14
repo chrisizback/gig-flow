@@ -1,344 +1,1131 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>GIG FLOW | Pro Profit Engine</title>
     <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
-            --bg: #0f172a; --card: #1e293b; --primary: #38bdf8; --success: #4ade80;
-            --danger: #f87171; --warning: #f59e0b; --text: #f1f5f9; --border: #334155;
+            --bg: #0f172a;
+            --card: #1e293b;
+            --primary: #38bdf8;
+            --success: #4ade80;
+            --danger: #f87171;
+            --warning: #f59e0b;
+            --text: #f1f5f9;
+            --border: #334155;
         }
 
-        body { font-family: 'Inter', system-ui, sans-serif; background-color: var(--bg); color: var(--text); margin: 0; display: flex; justify-content: center; min-height: 100vh; overflow-x: hidden; }
-        .app-container { width: 100%; max-width: 440px; padding: 10px 10px 100px; display: none; position: relative; }
+        body {
+            font-family: 'Inter', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            width: 100%;
+            max-width: 440px;
+            padding: 10px 10px 100px;
+            display: none;
+            position: relative;
+        }
 
         /* --- LOGIN SCREEN UI --- */
-        .auth-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 3000; padding: 20px; box-sizing: border-box; }
-        .auth-header { text-align: center; margin-bottom: 30px; }
-        .auth-header h1 { margin: 0; font-size: 3rem; color: var(--primary); font-weight: 950; letter-spacing: 0.05em; text-transform: uppercase; line-height: 1; }
-        .auth-header .tagline { font-size: 0.8rem; font-weight: 800; color: #94a3b8; letter-spacing: 0.3em; text-transform: uppercase; margin-top: 10px; }
-        .auth-card { background: var(--card); padding: 30px 20px; border-radius: 24px; border: 1px solid var(--border); width: 100%; max-width: 360px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); }
-        
-        .social-btn { width: 100%; background: transparent; border: 2px solid var(--border); color: var(--text); padding: 14px; border-radius: 16px; font-weight: 800; text-transform: uppercase; font-size: 0.75rem; cursor: pointer; margin-bottom: 12px; display: flex; justify-content: center; align-items: center; gap: 10px; transition: 0.2s; }
-        .social-btn:hover { border-color: #94a3b8; background: rgba(255,255,255,0.05); }
-        .divider { display: flex; align-items: center; text-align: center; margin: 20px 0; color: #64748b; font-size: 0.6rem; font-weight: 800; text-transform: uppercase; }
-        .divider::before, .divider::after { content: ''; flex: 1; border-bottom: 1px solid var(--border); }
-        .divider::before { margin-right: .5em; } .divider::after { margin-left: .5em; }
+        .auth-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .auth-header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .auth-header h1 {
+            margin: 0;
+            font-size: 3rem;
+            color: var(--primary);
+            font-weight: 950;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            line-height: 1;
+        }
+
+        .auth-header .tagline {
+            font-size: 0.8rem;
+            font-weight: 800;
+            color: #94a3b8;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .auth-card {
+            background: var(--card);
+            padding: 30px 20px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            width: 100%;
+            max-width: 360px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .social-btn {
+            width: 100%;
+            background: transparent;
+            border: 2px solid var(--border);
+            color: var(--text);
+            padding: 14px;
+            border-radius: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            transition: 0.2s;
+        }
+
+        .social-btn:hover {
+            border-color: #94a3b8;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #64748b;
+            font-size: 0.6rem;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .divider::before {
+            margin-right: .5em;
+        }
+
+        .divider::after {
+            margin-left: .5em;
+        }
 
         /* --- MAIN APP UI --- */
-        header { text-align: center; margin: 20px 0 25px; position: relative; }
-        h1 { margin: 0; font-size: 2.6rem; color: var(--primary); font-weight: 950; letter-spacing: 0.05em; text-transform: uppercase; }
-        .tagline { font-size: 0.7rem; font-weight: 800; opacity: 0.5; letter-spacing: 0.2em; text-transform: uppercase; }
-        .logout-btn { position: absolute; right: 0; top: 10px; font-size: 0.6rem; color: var(--danger); font-weight: 900; text-transform: uppercase; cursor: pointer; padding: 5px; border: 1px solid var(--danger); border-radius: 8px; }
+        header {
+            text-align: center;
+            margin: 20px 0 25px;
+            position: relative;
+        }
 
-        .nav-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: 90%; max-width: 400px; background: #1e293b; border: 2px solid var(--border); border-radius: 20px; display: flex; padding: 5px; z-index: 1000; box-shadow: 0 10px 25px rgba(0,0,0,0.5); }
-        .nav-btn { flex: 1; padding: 12px; border-radius: 15px; border: none; background: transparent; color: #94a3b8; font-weight: 800; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; transition: 0.2s; }
-        .nav-btn.active { background: var(--primary); color: var(--bg); }
-        .tab-content { display: none; } .tab-content.active { display: block; }
+        h1 {
+            margin: 0;
+            font-size: 2.6rem;
+            color: var(--primary);
+            font-weight: 950;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
 
-        .card { background: var(--card); padding: 20px; border-radius: 24px; border: 1px solid var(--border); margin-bottom: 12px; }
-        .section-label { font-size: 0.65rem; font-weight: 900; color: var(--primary); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .section-label::after { content: ""; height: 1px; background: var(--border); flex-grow: 1; }
+        .tagline {
+            font-size: 0.7rem;
+            font-weight: 800;
+            opacity: 0.5;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+        }
 
-        .input-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .group { margin-bottom: 12px; }
-        label { display: flex; align-items: center; font-size: 0.6rem; font-weight: 800; margin-bottom: 5px; color: #94a3b8; text-transform: uppercase; }
-        input, select { width: 100%; padding: 14px; border-radius: 12px; background: #0f172a; color: #fff; border: 2px solid var(--border); font-weight: 700; font-size: 1.1rem; outline: none; box-sizing: border-box; }
-        input:focus, select:focus { border-color: var(--primary); }
+        .logout-btn {
+            position: absolute;
+            right: 0;
+            top: 10px;
+            font-size: 0.6rem;
+            color: var(--danger);
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 5px;
+            border: 1px solid var(--danger);
+            border-radius: 8px;
+        }
 
-        .info-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: rgba(56, 189, 248, 0.15); color: var(--primary); font-size: 0.65rem; font-weight: 900; margin-left: 6px; cursor: help; position: relative; text-transform: lowercase; }
-        .info-icon::after { content: attr(data-tooltip); position: absolute; bottom: 100%; left: 50%; transform: translateX(-50%); width: 180px; background: #020617; border: 1px solid var(--primary); color: #f1f5f9; padding: 10px 12px; border-radius: 12px; font-size: 0.65rem; font-weight: 700; opacity: 0; visibility: hidden; transition: all 0.2s ease-out; z-index: 1000; text-transform: none; letter-spacing: normal; box-shadow: 0 10px 25px rgba(0,0,0,0.6); text-align: center; line-height: 1.4; pointer-events: none; }
-        .info-icon:hover::after, .info-icon:active::after { opacity: 1; visibility: visible; bottom: 130%; }
+        .nav-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 90%;
+            max-width: 400px;
+            background: #1e293b;
+            border: 2px solid var(--border);
+            border-radius: 20px;
+            display: flex;
+            padding: 5px;
+            z-index: 1000;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+        }
 
-        .profit-hero { text-align: center; padding: 30px 20px; background: #0f172a; border: 2px solid var(--primary); border-radius: 28px; margin: 15px 0; }
-        .profit-hero .val { font-size: 4rem; font-weight: 950; color: var(--success); display: block; line-height: 1; margin: 5px 0; }
-        
-        .metric-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
-        .metric { background: #0f172a; padding: 14px; border-radius: 18px; border: 1px solid var(--border); text-align: center; }
-        .metric .v { display: block; font-weight: 800; font-size: 1.1rem; }
-        .metric .l { font-size: 0.55rem; font-weight: 700; color: #64748b; text-transform: uppercase; }
+        .nav-btn {
+            flex: 1;
+            padding: 12px;
+            border-radius: 15px;
+            border: none;
+            background: transparent;
+            color: #94a3b8;
+            font-weight: 800;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: 0.2s;
+        }
 
-        .btn-main { width: 100%; background: var(--primary); color: var(--bg); border: none; padding: 16px; border-radius: 16px; font-weight: 900; text-transform: uppercase; cursor: pointer; margin-top: 10px; transition: 0.2s; }
-        .btn-outline { width: 100%; background: transparent; border: 2px solid var(--border); color: #94a3b8; padding: 12px; border-radius: 14px; font-weight: 800; text-transform: uppercase; font-size: 0.7rem; cursor: pointer; margin-top: 10px; }
+        .nav-btn.active {
+            background: var(--primary);
+            color: var(--bg);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--card);
+            padding: 20px;
+            border-radius: 24px;
+            border: 1px solid var(--border);
+            margin-bottom: 12px;
+        }
+
+        .section-label {
+            font-size: 0.65rem;
+            font-weight: 900;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-label::after {
+            content: "";
+            height: 1px;
+            background: var(--border);
+            flex-grow: 1;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+        }
+
+        .group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: flex;
+            align-items: center;
+            font-size: 0.6rem;
+            font-weight: 800;
+            margin-bottom: 5px;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        input,
+        select {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            background: #0f172a;
+            color: #fff;
+            border: 2px solid var(--border);
+            font-weight: 700;
+            font-size: 1.1rem;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: var(--primary);
+        }
+
+        .info-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: rgba(56, 189, 248, 0.15);
+            color: var(--primary);
+            font-size: 0.65rem;
+            font-weight: 900;
+            margin-left: 6px;
+            cursor: help;
+            position: relative;
+            text-transform: lowercase;
+        }
+
+        .info-icon::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 180px;
+            background: #020617;
+            border: 1px solid var(--primary);
+            color: #f1f5f9;
+            padding: 10px 12px;
+            border-radius: 12px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.2s ease-out;
+            z-index: 1000;
+            text-transform: none;
+            letter-spacing: normal;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+            text-align: center;
+            line-height: 1.4;
+            pointer-events: none;
+        }
+
+        .info-icon:hover::after,
+        .info-icon:active::after {
+            opacity: 1;
+            visibility: visible;
+            bottom: 130%;
+        }
+
+        .profit-hero {
+            text-align: center;
+            padding: 30px 20px;
+            background: #0f172a;
+            border: 2px solid var(--primary);
+            border-radius: 28px;
+            margin: 15px 0;
+        }
+
+        .profit-hero .val {
+            font-size: 4rem;
+            font-weight: 950;
+            color: var(--success);
+            display: block;
+            line-height: 1;
+            margin: 5px 0;
+        }
+
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .metric {
+            background: #0f172a;
+            padding: 14px;
+            border-radius: 18px;
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        .metric .v {
+            display: block;
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .metric .l {
+            font-size: 0.55rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+        }
+
+        .btn-main {
+            width: 100%;
+            background: var(--primary);
+            color: var(--bg);
+            border: none;
+            padding: 16px;
+            border-radius: 16px;
+            font-weight: 900;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.2s;
+        }
+
+        .btn-outline {
+            width: 100%;
+            background: transparent;
+            border: 2px solid var(--border);
+            color: #94a3b8;
+            padding: 12px;
+            border-radius: 14px;
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+
+        /* --- ANALYTICS UI --- */
+        .analytics-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+            font-size: 0.75rem;
+        }
+
+        .analytics-table th {
+            text-align: left;
+            padding: 8px;
+            border-bottom: 1px solid var(--border);
+            color: var(--primary);
+            text-transform: uppercase;
+            font-size: 0.6rem;
+            font-weight: 800;
+        }
+
+        .analytics-table td {
+            padding: 10px 8px;
+            border-bottom: 1px solid rgba(51, 65, 85, 0.5);
+            font-weight: 700;
+            color: #f1f5f9;
+        }
+
+        .analytics-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .analytics-table .plat-name {
+            font-weight: 900;
+        }
+
+        .analytics-table .positive {
+            color: var(--success);
+        }
 
         /* --- HISTORY & FILTER UI --- */
-        .history-item { background: var(--card); padding: 16px; border-radius: 20px; margin-bottom: 10px; border: 1px solid var(--border); border-left: 6px solid var(--primary); display: flex; justify-content: space-between; align-items: center; }
-        .h-details { font-size: 0.7rem; color: #94a3b8; font-weight: 700; }
-        .h-profit { font-weight: 900; color: var(--success); font-size: 1.2rem; }
-        .action-bar { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        
+        .history-item {
+            background: var(--card);
+            padding: 16px;
+            border-radius: 20px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border);
+            border-left: 6px solid var(--primary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .h-details {
+            font-size: 0.7rem;
+            color: #94a3b8;
+            font-weight: 700;
+        }
+
+        .h-profit {
+            font-weight: 900;
+            color: var(--success);
+            font-size: 1.2rem;
+        }
+
+        .action-bar {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
         /* Bottom Sheet Filter Menu */
-        .filter-backdrop { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); backdrop-filter: blur(4px); z-index: 1999; display: none; opacity: 0; transition: opacity 0.3s; }
-        .filter-drawer { position: fixed; bottom: -100%; left: 50%; transform: translateX(-50%); width: 100%; max-width: 440px; background: var(--card); border-top: 1px solid var(--border); z-index: 2000; border-radius: 32px 32px 0 0; padding: 25px 20px; box-sizing: border-box; transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1); box-shadow: 0 -10px 40px rgba(0,0,0,0.5); }
-        .filter-drawer.active { bottom: 0; }
-        .filter-backdrop.active { display: block; opacity: 1; }
-        .drawer-handle { width: 40px; height: 5px; background: var(--border); border-radius: 10px; margin: 0 auto 20px; }
+        .filter-backdrop {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 1999;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .filter-drawer {
+            position: fixed;
+            bottom: -100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            max-width: 440px;
+            background: var(--card);
+            border-top: 1px solid var(--border);
+            z-index: 2000;
+            border-radius: 32px 32px 0 0;
+            padding: 25px 20px;
+            box-sizing: border-box;
+            transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .filter-drawer.active {
+            bottom: 0;
+        }
+
+        .filter-backdrop.active {
+            display: block;
+            opacity: 1;
+        }
+
+        .drawer-handle {
+            width: 40px;
+            height: 5px;
+            background: var(--border);
+            border-radius: 10px;
+            margin: 0 auto 20px;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="auth-screen" id="authScreen">
-    <div class="auth-header">
-        <h1>GIG FLOW</h1>
-        <div class="tagline">Cloud Sync Enabled</div>
-    </div>
-    <div class="auth-card">
-        <div class="group"><label>Email Address</label><input type="email" id="emailIn" placeholder="driver@example.com"></div>
-        <div class="group"><label>Password</label><input type="password" id="passIn" placeholder="••••••••"></div>
-        <button class="btn-main" onclick="window.loginUser()" style="margin-top: 15px;">Sign In Securely</button>
-        <div style="text-align: center; margin-top: 20px; font-size: 0.7rem; color: #94a3b8; font-weight: 700;">
-            Need an account? <span style="color: var(--primary); cursor: pointer;" onclick="window.signupUser()">Sign Up (Pro)</span>
+    <div class="auth-screen" id="authScreen">
+        <div class="auth-header">
+            <h1>GIG FLOW</h1>
+            <div class="tagline">Cloud Sync Enabled</div>
         </div>
-    </div>
-</div>
-
-<div class="app-container" id="appMain">
-    <header>
-        <h1>GIG FLOW</h1>
-        <div class="tagline">Profit Engine Pro</div>
-        <div class="logout-btn" onclick="window.logoutUser()">Logout</div>
-    </header>
-
-    <div id="calcTab" class="tab-content active">
-        <div class="card">
-            <div class="section-label">Command Center</div>
-            <div class="group">
-                <label>Platform <span class="info-icon" data-tooltip="The specific delivery or gig app you are working for right now.">i</span></label>
-                <select id="platform">
-                    <option value="Uber">Uber</option>
-                    <option value="DoorDash">DoorDash</option>
-                    <option value="Amazon Flex">Amazon Flex</option>
-                    <option value="Walmart Spark">Walmart Spark</option>
-                </select>
-            </div>
-            <div class="group"><label>Earnings ($) <span class="info-icon" data-tooltip="The total dollar amount the app paid you.">i</span></label><input type="number" id="gross" placeholder="0.00" oninput="window.runMath()"></div>
-            <div class="input-grid">
-                <div class="group"><label>Active Mi <span class="info-icon" data-tooltip="Miles driven actively completing an order.">i</span></label><input type="number" id="activeIn" placeholder="0" oninput="window.runMath()"></div>
-                <div class="group"><label>Deadhead Mi <span class="info-icon" data-tooltip="Unpaid miles driven while returning to zone.">i</span></label><input type="number" id="deadIn" placeholder="0" oninput="window.runMath()"></div>
-                <div class="group"><label>Wait (min) <span class="info-icon" data-tooltip="Unpaid time spent waiting at a restaurant.">i</span></label><input type="number" id="waitIn" placeholder="0" oninput="window.runMath()"></div>
-                <div class="group"><label>Hours <span class="info-icon" data-tooltip="Total hours you were online this shift.">i</span></label><input type="number" id="hoursIn" placeholder="0" oninput="window.runMath()"></div>
-            </div>
-            <button class="btn-main" onclick="window.archiveCloudShift()">Archive to Cloud</button>
-        </div>
-
-        <div class="profit-hero">
-            <label style="justify-content: center; color: var(--primary); font-size: 0.7rem; font-weight: 900; letter-spacing: 0.1em;">NET PROFIT</label>
-            <span id="pDisp" class="val">$0.00</span>
-            <div id="hourlyTag" style="font-size: 0.9rem; font-weight: 800; color: #94a3b8;">$0.00/hr</div>
-        </div>
-
-        <div class="metric-grid">
-            <div class="metric"><span class="l">Distance</span><span id="mileDisp" class="v">0.0</span></div>
-            <div class="metric"><span class="l">Gas</span><span id="gasDisp" class="v" style="color: var(--danger)">$0.00</span></div>
-        </div>
-        
-        <div class="card" style="margin-top: 15px; opacity: 0.8;">
-            <div class="section-label">Vehicle Profile</div>
-            <div class="input-grid">
-                <div class="group" style="margin:0;"><label>Gas Price</label><input type="number" id="setGas" value="5.00" oninput="window.runMath()"></div>
-                <div class="group" style="margin:0;"><label>MPG</label><input type="number" id="setMPG" value="25" oninput="window.runMath()"></div>
-                <div class="group" style="grid-column: span 2;"><label>Repair Fund ($/mi)</label><input type="number" id="setMaint" value="0.05" step="0.01" oninput="window.runMath()"></div>
+        <div class="auth-card">
+            <div class="group"><label>Email Address</label><input type="email" id="emailIn"
+                    placeholder="driver@example.com"></div>
+            <div class="group"><label>Password</label><input type="password" id="passIn" placeholder="••••••••"></div>
+            <button class="btn-main" onclick="window.loginUser()" style="margin-top: 15px;">Sign In Securely</button>
+            <div style="text-align: center; margin-top: 20px; font-size: 0.7rem; color: #94a3b8; font-weight: 700;">
+                Need an account? <span style="color: var(--primary); cursor: pointer;"
+                    onclick="window.signupUser()">Sign Up (Pro)</span>
             </div>
         </div>
     </div>
 
-    <div id="histTab" class="tab-content">
-        <div class="action-bar">
-            <button class="btn-outline" style="margin:0; border-color: var(--primary); color: var(--text);" onclick="window.toggleFilterMenu()">Sort & Filter ⚙️</button>
+    <div class="app-container" id="appMain">
+        <header>
+            <h1>GIG FLOW</h1>
+            <div class="tagline">Profit Engine Pro</div>
+            <div class="logout-btn" onclick="window.logoutUser()">Logout</div>
+        </header>
+
+        <div id="calcTab" class="tab-content active">
+            <div class="card">
+                <div class="section-label">Command Center</div>
+                <div class="group">
+                    <label>Platform <span class="info-icon"
+                            data-tooltip="The specific delivery or gig app you are working for right now.">i</span></label>
+                    <select id="platform">
+                        <option value="Uber">Uber</option>
+                        <option value="DoorDash">DoorDash</option>
+                        <option value="Amazon Flex">Amazon Flex</option>
+                        <option value="Walmart Spark">Walmart Spark</option>
+                    </select>
+                </div>
+                <div class="input-grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                    <div class="group"><label>Base <span class="info-icon"
+                                data-tooltip="Standard delivery/ride pay.">i</span></label><input type="number"
+                            id="basePay" placeholder="0.00" oninput="window.runMath()"></div>
+                    <div class="group"><label>Tips <span class="info-icon"
+                                data-tooltip="Customer tips.">i</span></label><input type="number" id="tipsIn"
+                            placeholder="0.00" oninput="window.runMath()"></div>
+                    <div class="group"><label>Promo <span class="info-icon"
+                                data-tooltip="Surge, quests, or bonuses.">i</span></label><input type="number"
+                            id="surgeIn" placeholder="0.00" oninput="window.runMath()"></div>
+                </div>
+                <div class="group" style="margin-top: -5px;"><label>Total Gross ($)</label><input type="number"
+                        id="gross" placeholder="0.00" readonly style="opacity: 0.7; pointer-events: none;"></div>
+                <div class="input-grid">
+                    <div class="group"><label>Active Mi <span class="info-icon"
+                                data-tooltip="Miles driven actively completing an order.">i</span></label><input
+                            type="number" id="activeIn" placeholder="0" oninput="window.runMath()"></div>
+                    <div class="group"><label>Deadhead Mi <span class="info-icon"
+                                data-tooltip="Unpaid miles driven while returning to zone.">i</span></label><input
+                            type="number" id="deadIn" placeholder="0" oninput="window.runMath()"></div>
+                    <div class="group"><label>Wait (min) <span class="info-icon"
+                                data-tooltip="Unpaid time spent waiting at a restaurant.">i</span></label><input
+                            type="number" id="waitIn" placeholder="0" oninput="window.runMath()"></div>
+                    <div class="group"><label>Start Time <span class="info-icon"
+                                data-tooltip="When you started your shift.">i</span></label><input type="time"
+                            id="startIn" oninput="window.runMath()"></div>
+                    <div class="group"><label>End Time <span class="info-icon"
+                                data-tooltip="When you ended your shift.">i</span></label><input type="time" id="endIn"
+                            oninput="window.runMath()"></div>
+                </div>
+                <button class="btn-main" onclick="window.archiveCloudShift()">Archive to Cloud</button>
+            </div>
+
+            <div class="profit-hero">
+                <label
+                    style="justify-content: center; color: var(--primary); font-size: 0.7rem; font-weight: 900; letter-spacing: 0.1em;">NET
+                    PROFIT</label>
+                <span id="pDisp" class="val">$0.00</span>
+                <div id="hourlyTag" style="font-size: 0.9rem; font-weight: 800; color: #94a3b8;">$0.00/hr</div>
+            </div>
+
+            <div class="metric-grid">
+                <div class="metric"><span class="l">Distance</span><span id="mileDisp" class="v">0.0</span></div>
+                <div class="metric"><span class="l">Gas</span><span id="gasDisp" class="v"
+                        style="color: var(--danger)">$0.00</span></div>
+            </div>
+
+            <div class="card" style="margin-top: 15px; opacity: 0.8;">
+                <div class="section-label">Vehicle Profile</div>
+                <div class="input-grid">
+                    <div class="group" style="margin:0;"><label>Gas Price</label><input type="number" id="setGas"
+                            value="5.00" oninput="window.runMath()"></div>
+                    <div class="group" style="margin:0;"><label>MPG</label><input type="number" id="setMPG" value="25"
+                            oninput="window.runMath()"></div>
+                    <div class="group" style="grid-column: span 2;"><label>Repair Fund ($/mi)</label><input
+                            type="number" id="setMaint" value="0.05" step="0.01" oninput="window.runMath()"></div>
+                </div>
+            </div>
+            <div id="adPlaceholder" class="card"
+                style="margin-top: 15px; border: 1px dashed var(--border); text-align: center; display: none;">
+                <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 5px;">ADVERTISEMENT</div>
+                <div
+                    style="background: #020617; width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: var(--primary); border-radius: 8px;">
+                    Buy Cool Stuff Now!</div>
+            </div>
         </div>
-        <div id="filterStatus" style="font-size: 0.65rem; color: var(--primary); font-weight: 800; text-transform: uppercase; margin-bottom: 10px; text-align: center;">Showing: All Shifts</div>
-        <div id="historyList"></div>
+
+        <div id="histTab" class="tab-content">
+            <div class="action-bar">
+                <button class="btn-outline" style="margin:0; border-color: var(--primary); color: var(--text);"
+                    onclick="window.toggleFilterMenu()">Sort & Filter ⚙️</button>
+            </div>
+            <div id="filterStatus"
+                style="font-size: 0.65rem; color: var(--primary); font-weight: 800; text-transform: uppercase; margin-bottom: 10px; text-align: center;">
+                Showing: All Shifts</div>
+            <div id="historyList"></div>
+        </div>
+
+        <div id="analyticsTab" class="tab-content">
+            <div class="card">
+                <div class="section-label">Platform Comparison</div>
+                <div style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="profitChart"></canvas>
+                </div>
+            </div>
+            <div class="card" style="margin-top: 15px;">
+                <div class="section-label">Detailed Metrics</div>
+                <div id="analyticsSummary"></div>
+            </div>
+            <div class="card" style="margin-top: 15px;">
+                <div class="section-label">Earnings Breakdown</div>
+                <div style="position: relative; height: 250px; width: 100%;">
+                    <canvas id="breakdownChart"></canvas>
+                </div>
+            </div>
+            <div class="card" style="margin-top: 15px; border-color: var(--warning);">
+                <div class="section-label" style="color: var(--warning);">Tax Export (Premium)</div>
+                <div class="group">
+                    <label>Tax Year</label>
+                    <select id="exportYear">
+                        <option value="2026">2026</option>
+                        <option value="2025">2025</option>
+                        <option value="2024">2024</option>
+                    </select>
+                </div>
+                <button class="btn-main" style="background: var(--warning); color: #020617;"
+                    onclick="window.exportTaxCSV()">Download Schedule C (CSV)</button>
+            </div>
+        </div>
+
+        <div id="vaultTab" class="tab-content">
+            <div class="card">
+                <div class="section-label">Log Shared Expense</div>
+                <div class="group">
+                    <label>Date</label>
+                    <input type="date" id="vaultDate">
+                </div>
+                <div class="group">
+                    <label>Amount ($)</label>
+                    <input type="number" id="vaultAmount" placeholder="0.00">
+                </div>
+                <div class="group">
+                    <label>Category</label>
+                    <select id="vaultCategory">
+                        <option value="Maintenance">Maintenance / Repairs</option>
+                        <option value="Insurance">Insurance</option>
+                        <option value="Cellular">Cellular / Phone Bill</option>
+                        <option value="Supplies">Supplies (Bags, Mounts, etc.)</option>
+                    </select>
+                </div>
+                <div class="group">
+                    <label>Notes</label>
+                    <input type="text" id="vaultNotes" placeholder="Optional details...">
+                </div>
+                <button class="btn-main" onclick="window.logVaultExpense()">Save Expense</button>
+            </div>
+
+            <div id="vaultHistoryList" style="margin-top: 15px;"></div>
+        </div>
+
+        <div class="nav-bar">
+            <button class="nav-btn active" onclick="window.switchAppTab('calcTab', this)">Calculator</button>
+            <button class="nav-btn" onclick="window.switchAppTab('histTab', this)">History</button>
+            <button class="nav-btn" onclick="window.switchAppTab('vaultTab', this)">Vault</button>
+            <button class="nav-btn" onclick="window.switchAppTab('analyticsTab', this)">Analytics</button>
+        </div>
     </div>
 
-    <div class="nav-bar">
-        <button class="nav-btn active" onclick="window.switchAppTab('calcTab', this)">Calculator</button>
-        <button class="nav-btn" onclick="window.switchAppTab('histTab', this)">History</button>
+    <div class="filter-backdrop" id="filterBackdrop" onclick="window.toggleFilterMenu()"></div>
+    <div class="filter-drawer" id="filterDrawer">
+        <div class="drawer-handle"></div>
+        <div class="section-label">Filter & Sort Cloud Data</div>
+        <div class="group">
+            <label>Platform Filter</label>
+            <select id="filterPlat">
+                <option value="All">All Platforms</option>
+                <option value="Uber">Uber</option>
+                <option value="DoorDash">DoorDash</option>
+                <option value="Amazon Flex">Amazon Flex</option>
+                <option value="Walmart Spark">Walmart Spark</option>
+            </select>
+        </div>
+        <div class="group">
+            <label>Sort Order</label>
+            <select id="filterSort">
+                <option value="newest">Newest First (Default)</option>
+                <option value="oldest">Oldest First</option>
+                <option value="profitHigh">Highest Profit</option>
+                <option value="profitLow">Lowest Profit</option>
+            </select>
+        </div>
+        <div class="input-grid" style="margin-top: 20px;">
+            <button class="btn-outline" style="margin:0;" onclick="window.resetCloudFilters()">Reset</button>
+            <button class="btn-main" style="margin:0;" onclick="window.applyCloudFilters()">Apply Filters</button>
+        </div>
     </div>
-</div>
 
-<div class="filter-backdrop" id="filterBackdrop" onclick="window.toggleFilterMenu()"></div>
-<div class="filter-drawer" id="filterDrawer">
-    <div class="drawer-handle"></div>
-    <div class="section-label">Filter & Sort Cloud Data</div>
-    <div class="group">
-        <label>Platform Filter</label>
-        <select id="filterPlat">
-            <option value="All">All Platforms</option>
-            <option value="Uber">Uber</option>
-            <option value="DoorDash">DoorDash</option>
-            <option value="Amazon Flex">Amazon Flex</option>
-            <option value="Walmart Spark">Walmart Spark</option>
-        </select>
+    <div class="filter-backdrop" id="paywallBackdrop" onclick="window.hidePaywall()"></div>
+    <div class="filter-drawer" id="paywallDrawer">
+        <div class="drawer-handle"></div>
+        <div class="section-label"
+            style="color: var(--primary); text-align: center; font-size: 1.2rem; margin-bottom: 5px;">GIG FLOW PRO</div>
+        <div style="text-align: center; color: #94a3b8; font-size: 0.75rem; margin-bottom: 20px;">Unlock Advanced
+            Analytics, Vault, and Tax Exports. No Ads.</div>
+
+        <div class="card" style="border-color: var(--primary); margin-bottom: 10px; cursor: pointer;"
+            onclick="window.upgradePremium('monthly')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 900;">Monthly</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8;">Cancel anytime</div>
+                </div>
+                <div style="font-weight: 900; color: var(--primary);">$2.99 / mo</div>
+            </div>
+        </div>
+        <div class="card" style="border-color: var(--primary); margin-bottom: 10px; cursor: pointer;"
+            onclick="window.upgradePremium('quarterly')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 900;">Quarterly</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8;">Save 20%</div>
+                </div>
+                <div style="font-weight: 900; color: var(--primary);">$9.99 / qtr</div>
+            </div>
+        </div>
+        <div class="card" style="border-color: var(--primary); margin-bottom: 10px; cursor: pointer;"
+            onclick="window.upgradePremium('annual')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 900;">Annual</div>
+                    <div style="font-size: 0.65rem; color: #94a3b8;">Best Value</div>
+                </div>
+                <div style="font-weight: 900; color: var(--primary);">$69.99 / yr</div>
+            </div>
+        </div>
+        <div class="card" style="background: var(--primary); border: none; margin-bottom: 20px; cursor: pointer;"
+            onclick="window.upgradePremium('lifetime')">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div>
+                    <div style="font-weight: 900; color: var(--bg);">Lifetime</div>
+                    <div style="font-size: 0.65rem; color: rgba(15,23,42,0.7);">Full-time Access</div>
+                </div>
+                <div style="font-weight: 900; color: var(--bg);">$299.99</div>
+            </div>
+        </div>
+        <button class="btn-outline" onclick="window.hidePaywall()">Maybe Later</button>
     </div>
-    <div class="group">
-        <label>Sort Order</label>
-        <select id="filterSort">
-            <option value="newest">Newest First (Default)</option>
-            <option value="oldest">Oldest First</option>
-            <option value="profitHigh">Highest Profit</option>
-            <option value="profitLow">Lowest Profit</option>
-        </select>
-    </div>
-    <div class="input-grid" style="margin-top: 20px;">
-        <button class="btn-outline" style="margin:0;" onclick="window.resetCloudFilters()">Reset</button>
-        <button class="btn-main" style="margin:0;" onclick="window.applyCloudFilters()">Apply Filters</button>
-    </div>
-</div>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-    import { getFirestore, collection, addDoc, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, enableIndexedDbPersistence, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-   const firebaseConfig = {
-  apiKey: "AIzaSyCZlSBbi7lZLBctmfHUdRrOARHpm7T93Ow",
-  authDomain: "gig-flow-5930d.firebaseapp.com",
-  projectId: "gig-flow-5930d",
-  storageBucket: "gig-flow-5930d.firebasestorage.app",
-  messagingSenderId: "876072390705",
-  appId: "1:876072390705:web:cafdf507a03029981e4510"
-};
-
-    // Initialize Firebase
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    let currentUser = null;
-
-    // Listen for Login/Logout state changes
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            currentUser = user;
-            document.getElementById('authScreen').style.display = 'none';
-            document.getElementById('appMain').style.display = 'block';
-            window.runMath();
-        } else {
-            currentUser = null;
-            document.getElementById('authScreen').style.display = 'flex';
-            document.getElementById('appMain').style.display = 'none';
-        }
-    });
-
-    // --- Authentication Functions ---
-    window.loginUser = async function() {
-        const email = document.getElementById('emailIn').value;
-        const pass = document.getElementById('passIn').value;
-        try { await signInWithEmailAndPassword(auth, email, pass); } 
-        catch (error) { alert("Login Error: " + error.message); }
-    };
-
-    window.signupUser = async function() {
-        const email = document.getElementById('emailIn').value;
-        const pass = document.getElementById('passIn').value;
-        if(pass.length < 6) return alert("Password must be 6+ characters.");
-        try { 
-            await createUserWithEmailAndPassword(auth, email, pass); 
-            alert("Pro Account Created!"); 
-        } catch (error) { alert("Signup Error: " + error.message); }
-    };
-
-    window.logoutUser = function() { signOut(auth); };
-
-    // --- UI & Math Logic ---
-    window.toggleFilterMenu = function() {
-        document.getElementById('filterDrawer').classList.toggle('active');
-        document.getElementById('filterBackdrop').classList.toggle('active');
-    };
-
-    window.switchAppTab = function(id, btn) {
-        document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(id).classList.add('active');
-        btn.classList.add('active');
-        if(id === 'histTab') window.fetchCloudHistory();
-    };
-
-    window.runMath = function() {
-        const gross = parseFloat(document.getElementById('gross').value) || 0;
-        const dist = (parseFloat(document.getElementById('activeIn').value) || 0) + (parseFloat(document.getElementById('deadIn').value) || 0);
-        const hours = parseFloat(document.getElementById('hoursIn').value) || 0;
-        const wait = parseFloat(document.getElementById('waitIn').value) || 0;
-        
-        const gasCost = dist * ((parseFloat(document.getElementById('setGas').value) || 5) / (parseFloat(document.getElementById('setMPG').value) || 25));
-        const maint = dist * (parseFloat(document.getElementById('setMaint').value) || 0.05);
-        const profit = gross - gasCost - maint;
-        const hourly = (hours + (wait/60)) > 0 ? profit / (hours + (wait/60)) : 0;
-
-        document.getElementById('pDisp').innerText = `$${profit.toFixed(2)}`;
-        document.getElementById('hourlyTag').innerText = `$${hourly.toFixed(2)}/hr`;
-        document.getElementById('mileDisp').innerText = dist.toFixed(1);
-        document.getElementById('gasDisp').innerText = `$${gasCost.toFixed(2)}`;
-        
-        return { profit, dist };
-    };
-
-    // --- Database Functions ---
-    window.archiveCloudShift = async function() {
-        if (!currentUser) return alert("You must be logged in.");
-        const data = window.runMath();
-        const gross = document.getElementById('gross').value;
-        if (!gross || gross <= 0) return alert("Enter earnings first!");
-
-        const tripData = {
-            uid: currentUser.uid,          // Securely ties the shift to the logged-in user
-            timestamp: Date.now(),         // For sorting
-            date: new Date().toLocaleDateString(),
-            plat: document.getElementById('platform').value,
-            gross: parseFloat(gross).toFixed(2),
-            profit: data.profit.toFixed(2),
-            miles: data.dist.toFixed(1)
+        const firebaseConfig = {
+            apiKey: "AIzaSyCZlSBbi7lZLBctmfHUdRrOARHpm7T93Ow",
+            authDomain: "gig-flow-5930d.firebaseapp.com",
+            projectId: "gig-flow-5930d",
+            storageBucket: "gig-flow-5930d.firebasestorage.app",
+            messagingSenderId: "876072390705",
+            appId: "1:876072390705:web:cafdf507a03029981e4510"
         };
 
-        try {
-            // Push to Firebase Cloud Firestore
-            await addDoc(collection(db, "shifts"), tripData);
-            
-            // Clear inputs
-            ['gross', 'activeIn', 'deadIn', 'waitIn', 'hoursIn'].forEach(id => document.getElementById(id).value = '');
-            window.runMath();
-            alert("Shift securely archived to the Cloud! ☁️");
-        } catch (error) { alert("Error saving shift: " + error.message); }
-    };
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
-    window.fetchCloudHistory = async function() {
-        if (!currentUser) return;
-        const list = document.getElementById('historyList');
-        list.innerHTML = `<div style="text-align:center; padding:50px; color:var(--primary); font-weight:800;">Syncing Cloud Data...</div>`;
+        enableIndexedDbPersistence(db).catch((err) => {
+            if (err.code == 'failed-precondition') {
+                console.warn('Multiple tabs open, persistence can only be enabled in one tab at a a time.');
+            } else if (err.code == 'unimplemented') {
+                console.warn('The current browser does not support all of the features required to enable persistence');
+            }
+        });
 
-        try {
-            // Query only the current user's shifts
-            const q = query(collection(db, "shifts"), where("uid", "==", currentUser.uid));
-            const querySnapshot = await getDocs(q);
-            
-            let history = [];
-            querySnapshot.forEach((doc) => { history.push(doc.data()); });
+        let currentUser = null;
 
-            // Apply Filters Client-Side
-            const platFilter = document.getElementById('filterPlat').value;
-            const sortFilter = document.getElementById('filterSort').value;
-            const status = document.getElementById('filterStatus');
+        // Listen for Login/Logout state changes
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const userDocRef = doc(db, 'users', user.uid);
+                const userSnap = await getDoc(userDocRef);
+                if (userSnap.exists()) {
+                    currentUser = { ...user, ...userSnap.data() };
+                } else {
+                    const newProfile = { isPremium: false, subscriptionTier: 'free' };
+                    await setDoc(userDocRef, newProfile);
+                    currentUser = { ...user, ...newProfile };
+                }
 
-            if (platFilter !== 'All') {
-                history = history.filter(t => t.plat === platFilter);
-                status.innerText = `Showing: ${platFilter} Only`;
-            } else { status.innerText = `Showing: All Platforms`; }
+                document.getElementById('authScreen').style.display = 'none';
+                document.getElementById('appMain').style.display = 'block';
+                window.renderAdPlaceholder();
+                window.runMath();
+            } else {
+                currentUser = null;
+                document.getElementById('authScreen').style.display = 'flex';
+                document.getElementById('appMain').style.display = 'none';
+            }
+        });
 
-            // Sort Engine
-            history.sort((a, b) => b.timestamp - a.timestamp); // Default Newest
-            if (sortFilter === 'oldest') history.reverse();
-            if (sortFilter === 'profitHigh') history.sort((a, b) => parseFloat(b.profit) - parseFloat(a.profit));
-            if (sortFilter === 'profitLow') history.sort((a, b) => parseFloat(a.profit) - parseFloat(b.profit));
+        // --- Authentication Functions ---
+        window.loginUser = async function () {
+            const email = document.getElementById('emailIn').value;
+            const pass = document.getElementById('passIn').value;
+            try { await signInWithEmailAndPassword(auth, email, pass); }
+            catch (error) { alert("Login Error: " + error.message); }
+        };
 
-            if (history.length === 0) {
-                list.innerHTML = `<div style="text-align:center; opacity:0.3; padding:50px;">No shifts found in the cloud.</div>`;
+        window.signupUser = async function () {
+            const email = document.getElementById('emailIn').value;
+            const pass = document.getElementById('passIn').value;
+            if (pass.length < 6) return alert("Password must be 6+ characters.");
+            try {
+                const cred = await createUserWithEmailAndPassword(auth, email, pass);
+                await setDoc(doc(db, 'users', cred.user.uid), { isPremium: false, subscriptionTier: 'free' });
+                alert("Account Created!");
+            } catch (error) { alert("Signup Error: " + error.message); }
+        };
+
+        window.renderAdPlaceholder = function () {
+            const ad = document.getElementById('adPlaceholder');
+            if (ad) {
+                if (currentUser && currentUser.isPremium) {
+                    ad.style.display = 'none';
+                } else {
+                    ad.style.display = 'block';
+                }
+            }
+        };
+
+        window.showPaywall = function () {
+            document.getElementById('paywallDrawer').classList.add('active');
+            document.getElementById('paywallBackdrop').classList.add('active');
+        };
+
+        window.hidePaywall = function () {
+            document.getElementById('paywallDrawer').classList.remove('active');
+            document.getElementById('paywallBackdrop').classList.remove('active');
+        };
+
+        window.upgradePremium = async function (tier) {
+            if (!currentUser) return;
+            try {
+                await setDoc(doc(db, 'users', currentUser.uid), { isPremium: true, subscriptionTier: tier }, { merge: true });
+                currentUser.isPremium = true;
+                currentUser.subscriptionTier = tier;
+                window.hidePaywall();
+                window.renderAdPlaceholder();
+                alert(`Successfully upgraded to ${tier} tier! All Pro features unlocked.`);
+            } catch (err) {
+                alert('Upgrade failed: ' + err.message);
+            }
+        };
+
+        window.logoutUser = function () { signOut(auth); };
+
+        // --- UI & Math Logic ---
+        window.toggleFilterMenu = function () {
+            document.getElementById('filterDrawer').classList.toggle('active');
+            document.getElementById('filterBackdrop').classList.toggle('active');
+        };
+
+        window.switchAppTab = function (id, btn) {
+            if (!currentUser) return;
+
+            // Premium Gating Logic
+            if ((id === 'analyticsTab' || id === 'vaultTab') && !currentUser.isPremium) {
+                window.showPaywall();
                 return;
             }
 
-            // Render
-            list.innerHTML = history.map(t => `
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            btn.classList.add('active');
+            if (id === 'histTab') window.fetchCloudHistory();
+            if (id === 'analyticsTab') window.fetchAnalytics();
+            if (id === 'vaultTab') window.fetchVaultHistory();
+        };
+
+        window.logVaultExpense = async function () {
+            if (!currentUser) return alert("You must be logged in.");
+            const dateStr = document.getElementById('vaultDate').value;
+            const amountStr = document.getElementById('vaultAmount').value;
+            const cat = document.getElementById('vaultCategory').value;
+            const notes = document.getElementById('vaultNotes').value;
+
+            if (!dateStr || !amountStr) return alert("Please fill out Date and Amount.");
+
+            const expenseData = {
+                uid: currentUser.uid,
+                timestamp: new Date(dateStr).getTime() + new Date().getTime() % 86400000,
+                date: new Date(dateStr).toLocaleDateString(),
+                amount: parseFloat(amountStr).toFixed(2),
+                category: cat,
+                notes: notes,
+                is_shared: true
+            };
+
+            try {
+                await addDoc(collection(db, "expenses"), expenseData);
+                document.getElementById('vaultAmount').value = '';
+                document.getElementById('vaultNotes').value = '';
+                alert("Expense logged securely to the Vault! 🔒");
+                window.fetchVaultHistory();
+            } catch (error) {
+                alert("Error saving expense: " + error.message);
+            }
+        };
+
+        window.fetchVaultHistory = async function () {
+            if (!currentUser) return;
+            const list = document.getElementById('vaultHistoryList');
+            list.innerHTML = `<div style="text-align:center; padding:20px; color:var(--primary); font-weight:800;">Loading Vault...</div>`;
+
+            try {
+                const q = query(collection(db, "expenses"), where("uid", "==", currentUser.uid));
+                const snap = await getDocs(q);
+
+                let history = [];
+                snap.forEach(doc => history.push(doc.data()));
+
+                history.sort((a, b) => b.timestamp - a.timestamp);
+
+                if (history.length === 0) {
+                    list.innerHTML = `<div style="text-align:center; opacity:0.3; padding:20px;">No expenses logged yet.</div>`;
+                    return;
+                }
+
+                list.innerHTML = history.map(t => `
+                <div class="history-item" style="border-left-color: var(--warning);">
+                    <div>
+                        <div class="h-details">${t.date}</div>
+                        <div style="font-weight:900; color:var(--warning);">${t.category}</div>
+                        <div class="h-details" style="font-size: 0.6rem;">${t.notes || 'No notes'}</div>
+                    </div>
+                    <div class="h-profit" style="color: var(--danger);">-$${parseFloat(t.amount).toFixed(2)}</div>
+                </div>
+                `).join('');
+            } catch (err) {
+                list.innerHTML = `<div style="text-align:center; color:var(--danger);">Error loading Vault.</div>`;
+            }
+        };
+
+        window.calculateHours = function () {
+            const startStr = document.getElementById('startIn') ? document.getElementById('startIn').value : '';
+            const endStr = document.getElementById('endIn') ? document.getElementById('endIn').value : '';
+            if (!startStr || !endStr) return 0;
+
+            const [startH, startM] = startStr.split(':').map(Number);
+            const [endH, endM] = endStr.split(':').map(Number);
+
+            let diffHours = endH - startH + (endM - startM) / 60;
+            if (diffHours < 0) diffHours += 24; // Crosses midnight
+            return diffHours;
+        };
+
+        window.runMath = function () {
+            const basePay = parseFloat(document.getElementById('basePay').value) || 0;
+            const tips = parseFloat(document.getElementById('tipsIn').value) || 0;
+            const surge = parseFloat(document.getElementById('surgeIn').value) || 0;
+            const gross = basePay + tips + surge;
+
+            const grossEl = document.getElementById('gross');
+            if (grossEl) grossEl.value = gross > 0 ? gross.toFixed(2) : '';
+
+            const dist = (parseFloat(document.getElementById('activeIn').value) || 0) + (parseFloat(document.getElementById('deadIn').value) || 0);
+            const hours = window.calculateHours();
+            const wait = parseFloat(document.getElementById('waitIn').value) || 0;
+
+            const gasCost = dist * ((parseFloat(document.getElementById('setGas').value) || 5) / (parseFloat(document.getElementById('setMPG').value) || 25));
+            const maint = dist * (parseFloat(document.getElementById('setMaint').value) || 0.05);
+            const profit = gross - gasCost - maint;
+            const hourly = (hours + (wait / 60)) > 0 ? profit / (hours + (wait / 60)) : 0;
+
+            document.getElementById('pDisp').innerText = `$${profit.toFixed(2)}`;
+            document.getElementById('hourlyTag').innerText = `$${hourly.toFixed(2)}/hr`;
+            document.getElementById('mileDisp').innerText = dist.toFixed(1);
+            document.getElementById('gasDisp').innerText = `$${gasCost.toFixed(2)}`;
+
+            return { profit, dist, hours, wait, gasCost, maint };
+        };
+
+        // --- Database Functions ---
+        window.archiveCloudShift = async function () {
+            if (!currentUser) return alert("You must be logged in.");
+            const data = window.runMath();
+            const gross = document.getElementById('gross').value;
+            if (!gross || gross <= 0) return alert("Enter earnings first!");
+
+            const tripData = {
+                uid: currentUser.uid,          // Securely ties the shift to the logged-in user
+                timestamp: Date.now(),         // For sorting
+                date: new Date().toLocaleDateString(),
+                plat: document.getElementById('platform').value,
+                gross: parseFloat(gross).toFixed(2),
+                base_pay: parseFloat(document.getElementById('basePay').value || 0).toFixed(2),
+                tips: parseFloat(document.getElementById('tipsIn').value || 0).toFixed(2),
+                surge_bonus: parseFloat(document.getElementById('surgeIn').value || 0).toFixed(2),
+                profit: data.profit.toFixed(2),
+                miles: data.dist.toFixed(1),
+                startTime: document.getElementById('startIn').value || null,
+                endTime: document.getElementById('endIn').value || null,
+                hours: data.hours,
+                wait_time: data.wait,
+                active_miles: parseFloat(document.getElementById('activeIn').value) || 0,
+                deadhead_miles: parseFloat(document.getElementById('deadIn').value) || 0,
+                gas_cost: data.gasCost.toFixed(2),
+                maint_cost: data.maint.toFixed(2)
+            };
+
+            try {
+                // Push to Firebase Cloud Firestore
+                await addDoc(collection(db, "shifts"), tripData);
+
+                // Clear inputs
+                ['basePay', 'tipsIn', 'surgeIn', 'activeIn', 'deadIn', 'waitIn', 'startIn', 'endIn'].forEach(id => {
+                    if (document.getElementById(id)) document.getElementById(id).value = '';
+                });
+                window.runMath();
+                alert("Shift securely archived to the Cloud! ☁️");
+            } catch (error) { alert("Error saving shift: " + error.message); }
+        };
+
+        window.fetchCloudHistory = async function () {
+            if (!currentUser) return;
+            const list = document.getElementById('historyList');
+            list.innerHTML = `<div style="text-align:center; padding:50px; color:var(--primary); font-weight:800;">Syncing Cloud Data...</div>`;
+
+            try {
+                // Query only the current user's shifts
+                const q = query(collection(db, "shifts"), where("uid", "==", currentUser.uid));
+                const querySnapshot = await getDocs(q);
+
+                let history = [];
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+                    const mappedData = {
+                        ...d,
+                        base_pay: d.base_pay !== undefined ? d.base_pay : d.gross,
+                        tips: d.tips !== undefined ? d.tips : 0,
+                        surge_bonus: d.surge_bonus !== undefined ? d.surge_bonus : 0,
+                        hours: d.hours !== undefined ? d.hours : 0,
+                        wait_time: d.wait_time !== undefined ? d.wait_time : 0,
+                        active_miles: d.active_miles !== undefined ? d.active_miles : 0,
+                        deadhead_miles: d.deadhead_miles !== undefined ? d.deadhead_miles : 0,
+                        gas_cost: d.gas_cost !== undefined ? d.gas_cost : 0,
+                        maint_cost: d.maint_cost !== undefined ? d.maint_cost : 0,
+                        startTime: d.startTime || null,
+                        endTime: d.endTime || null
+                    };
+                    history.push(mappedData);
+                });
+
+                // Apply Filters Client-Side
+                const platFilter = document.getElementById('filterPlat').value;
+                const sortFilter = document.getElementById('filterSort').value;
+                const status = document.getElementById('filterStatus');
+
+                if (platFilter !== 'All') {
+                    history = history.filter(t => t.plat === platFilter);
+                    status.innerText = `Showing: ${platFilter} Only`;
+                } else { status.innerText = `Showing: All Platforms`; }
+
+                // Sort Engine
+                history.sort((a, b) => b.timestamp - a.timestamp); // Default Newest
+                if (sortFilter === 'oldest') history.reverse();
+                if (sortFilter === 'profitHigh') history.sort((a, b) => parseFloat(b.profit) - parseFloat(a.profit));
+                if (sortFilter === 'profitLow') history.sort((a, b) => parseFloat(a.profit) - parseFloat(b.profit));
+
+                if (history.length === 0) {
+                    list.innerHTML = `<div style="text-align:center; opacity:0.3; padding:50px;">No shifts found in the cloud.</div>`;
+                    return;
+                }
+
+                // Render
+                list.innerHTML = history.map(t => `
                 <div class="history-item">
                     <div>
                         <div class="h-details">${t.date}</div>
@@ -349,21 +1136,268 @@
                 </div>
             `).join('');
 
-        } catch (error) { 
-            list.innerHTML = `<div style="text-align:center; color:var(--danger);">Error syncing data. Check your connection.</div>`;
-            console.error("Firebase fetch error: ", error); 
-        }
-    };
+            } catch (error) {
+                list.innerHTML = `<div style="text-align:center; color:var(--danger);">Error syncing data. Check your connection.</div>`;
+                console.error("Firebase fetch error: ", error);
+            }
+        };
 
-    window.applyCloudFilters = function() { window.toggleFilterMenu(); window.fetchCloudHistory(); };
-    window.resetCloudFilters = function() {
-        document.getElementById('filterPlat').value = 'All';
-        document.getElementById('filterSort').value = 'newest';
-        window.applyCloudFilters();
-    };
+        window.applyCloudFilters = function () { window.toggleFilterMenu(); window.fetchCloudHistory(); };
+        window.resetCloudFilters = function () {
+            document.getElementById('filterPlat').value = 'All';
+            document.getElementById('filterSort').value = 'newest';
+            window.applyCloudFilters();
+        };
 
-    // Initialize math on load
-    window.onload = window.runMath;
-</script>
+        let profitChartInstance = null;
+        let breakdownChartInstance = null;
+
+        window.fetchAnalytics = async function () {
+            if (!currentUser) return;
+            const summaryDiv = document.getElementById('analyticsSummary');
+            summaryDiv.innerHTML = `<div style="text-align:center; padding:20px; color:var(--primary); font-weight:800;">Crunching Data...</div>`;
+
+            try {
+                // Fetch shifts
+                const qShifts = query(collection(db, "shifts"), where("uid", "==", currentUser.uid));
+                const snapShifts = await getDocs(qShifts);
+
+                // Fetch expenses
+                const qExp = query(collection(db, "expenses"), where("uid", "==", currentUser.uid));
+                const snapExp = await getDocs(qExp);
+
+                let totalSharedExpenses = 0;
+                snapExp.forEach(doc => {
+                    totalSharedExpenses += parseFloat(doc.data().amount) || 0;
+                });
+
+                const aggregates = {};
+                let totalMilesAllPlatforms = 0;
+
+                snapShifts.forEach((doc) => {
+                    const d = doc.data();
+                    const plat = d.plat || "Unknown";
+
+                    if (!aggregates[plat]) {
+                        aggregates[plat] = {
+                            profit: 0,
+                            hours: 0,
+                            wait: 0,
+                            miles: 0,
+                            basePay: 0,
+                            tips: 0,
+                            surge: 0
+                        };
+                    }
+
+                    aggregates[plat].profit += parseFloat(d.profit) || 0;
+                    aggregates[plat].hours += parseFloat(d.hours !== undefined ? d.hours : 0) || 0;
+                    aggregates[plat].wait += parseFloat(d.wait_time !== undefined ? d.wait_time : 0) || 0;
+                    const shiftMiles = parseFloat(d.miles) || 0;
+                    aggregates[plat].miles += shiftMiles;
+                    totalMilesAllPlatforms += shiftMiles;
+
+                    aggregates[plat].basePay += parseFloat(d.base_pay !== undefined ? d.base_pay : d.gross) || 0;
+                    aggregates[plat].tips += parseFloat(d.tips) || 0;
+                    aggregates[plat].surge += parseFloat(d.surge_bonus) || 0;
+                });
+
+                // Distribute shared expenses
+                const platformsKeys = Object.keys(aggregates);
+                platformsKeys.forEach(p => {
+                    const data = aggregates[p];
+                    const percentMiles = totalMilesAllPlatforms > 0 ? (data.miles / totalMilesAllPlatforms) : 0;
+                    const sharedDeduction = totalSharedExpenses * percentMiles;
+                    data.profit -= sharedDeduction;
+                });
+
+                // Prepare data for UI
+                const platforms = Object.keys(aggregates);
+                const profits = [];
+                const baseData = [];
+                const tipsData = [];
+                const surgeData = [];
+
+                let tableHtml = `<table class="analytics-table">
+                    <thead><tr><th>Platform</th><th>Profit</th><th>Rate</th><th>$/Mi</th></tr></thead><tbody>`;
+
+                if (platforms.length === 0) {
+                    summaryDiv.innerHTML = `<div style="text-align:center; opacity:0.3; padding:20px;">No data to analyze.</div>`;
+                    if (profitChartInstance) profitChartInstance.destroy();
+                    if (breakdownChartInstance) breakdownChartInstance.destroy();
+                    return;
+                }
+
+                platforms.forEach(p => {
+                    const data = aggregates[p];
+                    const totalHours = data.hours + (data.wait / 60);
+                    const hourlyRate = totalHours > 0 ? (data.profit / totalHours) : 0;
+                    const ppm = data.miles > 0 ? (data.profit / data.miles) : 0;
+
+                    profits.push(data.profit);
+                    baseData.push(data.basePay);
+                    tipsData.push(data.tips);
+                    surgeData.push(data.surge);
+
+                    tableHtml += `
+                        <tr>
+                            <td class="plat-name">${p}</td>
+                            <td class="positive">$${data.profit.toFixed(2)}</td>
+                            <td>$${hourlyRate.toFixed(2)}/hr</td>
+                            <td>$${ppm.toFixed(2)}/mi</td>
+                        </tr>
+                    `;
+                });
+
+                tableHtml += `</tbody></table>`;
+                summaryDiv.innerHTML = tableHtml;
+
+                // Render Chart
+                const ctx = document.getElementById('profitChart').getContext('2d');
+                if (profitChartInstance) profitChartInstance.destroy();
+
+                profitChartInstance = new Chart(ctx, {
+                    type: 'bar',
+                    data: {
+                        labels: platforms,
+                        datasets: [{
+                            label: 'Net Profit ($)',
+                            data: profits,
+                            backgroundColor: '#38bdf8',
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        }
+                    }
+                });
+
+                // Render Breakdown Chart
+                const ctxBreakdown = document.getElementById('breakdownChart');
+                if (ctxBreakdown) {
+                    if (breakdownChartInstance) breakdownChartInstance.destroy();
+                    breakdownChartInstance = new Chart(ctxBreakdown.getContext('2d'), {
+                        type: 'bar',
+                        data: {
+                            labels: platforms,
+                            datasets: [
+                                { label: 'Base Pay', data: baseData, backgroundColor: '#3b82f6', borderRadius: 4 },
+                                { label: 'Tips', data: tipsData, backgroundColor: '#60a5fa', borderRadius: 4 },
+                                { label: 'Surge/Promo', data: surgeData, backgroundColor: '#f59e0b', borderRadius: 4 }
+                            ]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            scales: {
+                                x: { stacked: true, grid: { display: false }, ticks: { color: '#94a3b8' } },
+                                y: { stacked: true, beginAtZero: true, grid: { color: '#334155' }, ticks: { color: '#94a3b8' } }
+                            },
+                            plugins: {
+                                legend: { labels: { color: '#94a3b8' } }
+                            }
+                        }
+                    });
+                }
+
+            } catch (error) {
+                summaryDiv.innerHTML = `<div style="text-align:center; color:var(--danger);">Error loading analytics.</div>`;
+                console.error("Analytics Error: ", error);
+            }
+        };
+
+        window.exportTaxCSV = async function () {
+            if (!currentUser) return;
+
+            // Premium Paywall
+            if (!currentUser.isPremium) {
+                window.showPaywall();
+                return;
+            }
+
+            const year = document.getElementById('exportYear').value;
+            try {
+                // Fetch shifts and expenses
+                const qShifts = query(collection(db, "shifts"), where("uid", "==", currentUser.uid));
+                const snapShifts = await getDocs(qShifts);
+
+                const qExp = query(collection(db, "expenses"), where("uid", "==", currentUser.uid));
+                const snapExp = await getDocs(qExp);
+
+                let totalGross = 0;
+                let totalCarExpenses = 0;
+                let totalSupplies = 0;
+                let totalOther = 0;
+                let totalFees = 0; // Placeholder if fees are tracked later
+
+                snapShifts.forEach((doc) => {
+                    const d = doc.data();
+                    const shiftDate = new Date(d.timestamp || d.date);
+                    if (shiftDate.getFullYear().toString() === year) {
+                        totalGross += parseFloat(d.gross) || 0;
+                        const gas = parseFloat(d.gas_cost) || 0;
+                        const maint = parseFloat(d.maint_cost) || 0;
+                        totalCarExpenses += (gas + maint);
+                    }
+                });
+
+                snapExp.forEach((doc) => {
+                    const d = doc.data();
+                    const expDate = new Date(d.timestamp || d.date);
+                    if (expDate.getFullYear().toString() === year) {
+                        const amt = parseFloat(d.amount) || 0;
+                        if (d.category === 'Maintenance' || d.category === 'Insurance') {
+                            totalCarExpenses += amt;
+                        } else if (d.category === 'Supplies') {
+                            totalSupplies += amt;
+                        } else {
+                            totalOther += amt; // e.g. Cellular
+                        }
+                    }
+                });
+
+                // Generate CSV
+                let csvContent = "data:text/csv;charset=utf-8,";
+                csvContent += "IRS Schedule C Category,Amount ($)\n";
+                csvContent += `Total Gross Receipts,${totalGross.toFixed(2)}\n`;
+                csvContent += `Car and Truck Expenses,${totalCarExpenses.toFixed(2)}\n`;
+                csvContent += `Supplies,${totalSupplies.toFixed(2)}\n`;
+                csvContent += `Other Business Expenses,${totalOther.toFixed(2)}\n`;
+                csvContent += `Commissions and Fees,${totalFees.toFixed(2)}\n`;
+                csvContent += `NET PROFIT,${(totalGross - totalCarExpenses - totalSupplies - totalOther - totalFees).toFixed(2)}\n`;
+
+                const encodedUri = encodeURI(csvContent);
+                const link = document.createElement("a");
+                link.setAttribute("href", encodedUri);
+                link.setAttribute("download", `GIG_FLOW_Schedule_C_${year}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+
+            } catch (error) {
+                alert("Error generating export: " + error.message);
+                console.error("Export Error:", error);
+            }
+        };
+
+        // Initialize math on load
+        window.onload = function () {
+            window.runMath();
+            const dateInput = document.getElementById('vaultDate');
+            if (dateInput) {
+                const now = new Date();
+                dateInput.value = now.toISOString().split('T')[0];
+            }
+        };
+    </script>
 </body>
+
 </html>
