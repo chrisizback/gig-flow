@@ -679,18 +679,24 @@
         </div>
 
         <div id="vaultTab" class="tab-content">
+            <div class="card" style="margin-bottom: 15px; text-align: center;">
+                <div class="section-label" style="color: var(--primary);">Current Tax Year Maintenance Spent</div>
+                <div id="vaultYearSummary" style="font-size: 2rem; font-weight: 900; color: var(--danger);">$0.00</div>
+            </div>
+
             <div class="card">
-                <div class="section-label">Log Shared Expense</div>
+                <div class="section-label" id="vaultFormTitle">Log Vehicle Maintenance</div>
+                <input type="hidden" id="vaultEditId" value="">
                 <div class="group">
                     <label>Date</label>
                     <input type="date" id="vaultDate">
                 </div>
                 <div class="group">
-                    <label>Amount ($)</label>
+                    <label>Cost ($)</label>
                     <input type="number" id="vaultAmount" placeholder="0.00">
                 </div>
                 <div class="group">
-                    <label>Category</label>
+                    <label>Service Type</label>
                     <select id="vaultCategory">
                         <option value="Maintenance">Maintenance / Repairs</option>
                         <option value="Insurance">Insurance</option>
@@ -699,10 +705,14 @@
                     </select>
                 </div>
                 <div class="group">
+                    <label>Odometer Reading (Optional)</label>
+                    <input type="number" id="vaultOdometer" placeholder="e.g. 55000">
+                </div>
+                <div class="group">
                     <label>Notes</label>
                     <input type="text" id="vaultNotes" placeholder="Optional details...">
                 </div>
-                <button class="btn-main" onclick="window.logVaultExpense()">Save Expense</button>
+                <button class="btn-main" id="vaultSubmitBtn" onclick="window.logVaultExpense()">Save Expense</button>
             </div>
 
             <div id="vaultHistoryList" style="margin-top: 15px;"></div>
@@ -753,53 +763,19 @@
         <div style="text-align: center; color: #94a3b8; font-size: 0.75rem; margin-bottom: 20px;">Unlock Advanced
             Analytics, Vault, and Tax Exports. No Ads.</div>
 
-        <div class="card" style="border-color: var(--primary); margin-bottom: 10px; cursor: pointer;"
-            onclick="window.upgradePremium('monthly')">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-weight: 900;">Monthly</div>
-                    <div style="font-size: 0.65rem; color: #94a3b8;">Cancel anytime</div>
-                </div>
-                <div style="font-weight: 900; color: var(--primary);">$2.99 / mo</div>
-            </div>
+        <div id="paywallOfferingsList">
+            <div style="text-align: center; color: var(--primary); padding: 20px;">Loading Pro Tiers...</div>
         </div>
-        <div class="card" style="border-color: var(--primary); margin-bottom: 10px; cursor: pointer;"
-            onclick="window.upgradePremium('quarterly')">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-weight: 900;">Quarterly</div>
-                    <div style="font-size: 0.65rem; color: #94a3b8;">Save 20%</div>
-                </div>
-                <div style="font-weight: 900; color: var(--primary);">$9.99 / qtr</div>
-            </div>
-        </div>
-        <div class="card" style="border-color: var(--primary); margin-bottom: 10px; cursor: pointer;"
-            onclick="window.upgradePremium('annual')">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-weight: 900;">Annual</div>
-                    <div style="font-size: 0.65rem; color: #94a3b8;">Best Value</div>
-                </div>
-                <div style="font-weight: 900; color: var(--primary);">$69.99 / yr</div>
-            </div>
-        </div>
-        <div class="card" style="background: var(--primary); border: none; margin-bottom: 20px; cursor: pointer;"
-            onclick="window.upgradePremium('lifetime')">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-                <div>
-                    <div style="font-weight: 900; color: var(--bg);">Lifetime</div>
-                    <div style="font-size: 0.65rem; color: rgba(15,23,42,0.7);">Full-time Access</div>
-                </div>
-                <div style="font-weight: 900; color: var(--bg);">$299.99</div>
-            </div>
-        </div>
+        <button class="btn-main" id="paywallSubscribeBtn" onclick="window.triggerSelectedPurchase()" disabled
+            style="margin-bottom: 10px;">Subscribe Now</button>
         <button class="btn-outline" onclick="window.hidePaywall()">Maybe Later</button>
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, where, enableIndexedDbPersistence, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, query, where, enableIndexedDbPersistence, doc, setDoc, getDoc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+        import { Purchases } from "https://esm.sh/@revenuecat/purchases-js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyCZlSBbi7lZLBctmfHUdRrOARHpm7T93Ow",
@@ -824,6 +800,8 @@
         });
 
         let currentUser = null;
+        let purchases = null;
+        let rcPackages = null;
 
         // Listen for Login/Logout state changes
         onAuthStateChanged(auth, async (user) => {
@@ -836,6 +814,23 @@
                     const newProfile = { isPremium: false, subscriptionTier: 'free' };
                     await setDoc(userDocRef, newProfile);
                     currentUser = { ...user, ...newProfile };
+                }
+
+                // Initialize RevenueCat SDK
+                try {
+                    purchases = Purchases.configure("strp_eLPKShujOJeFSMkVxndQSCcJJHn", currentUser.uid);
+
+                    // Gatekeeper Logic
+                    const customerInfo = await purchases.getCustomerInfo();
+                    if (customerInfo.entitlements.active.premium) {
+                        currentUser.isPremium = true;
+                    } else {
+                        currentUser.isPremium = false;
+                    }
+
+                    window.fetchOfferings(); // Pre-fetch offerings
+                } catch (e) {
+                    console.error("Failed to initialize RevenueCat", e);
                 }
 
                 document.getElementById('authScreen').style.display = 'none';
@@ -868,20 +863,42 @@
             } catch (error) { alert("Signup Error: " + error.message); }
         };
 
-        window.renderAdPlaceholder = function () {
+        window.renderAdPlaceholder = async function () {
             const ad = document.getElementById('adPlaceholder');
-            if (ad) {
-                if (currentUser && currentUser.isPremium) {
-                    ad.style.display = 'none';
-                } else {
-                    ad.style.display = 'block';
+            if (!ad) return;
+
+            let isPremium = false;
+            if (purchases) {
+                try {
+                    const customerInfo = await purchases.getCustomerInfo();
+                    isPremium = !!customerInfo.entitlements.active.premium;
+                } catch (e) {
+                    isPremium = currentUser && currentUser.isPremium;
                 }
+            } else {
+                isPremium = currentUser && currentUser.isPremium;
+            }
+
+            if (isPremium) {
+                // Completely unmount the contents to prevent network requests
+                ad.innerHTML = '';
+                ad.style.display = 'none';
+            } else {
+                if (ad.innerHTML.trim() === '') {
+                    // Re-mount the ad content if needed
+                    ad.innerHTML = `
+                        <div style="font-size: 0.7rem; color: #94a3b8; margin-bottom: 5px;">ADVERTISEMENT</div>
+                        <div style="background: #020617; width: 100%; height: 50px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 0.8rem; color: var(--primary); border-radius: 8px;">Buy Cool Stuff Now!</div>
+                    `;
+                }
+                ad.style.display = 'block';
             }
         };
 
         window.showPaywall = function () {
             document.getElementById('paywallDrawer').classList.add('active');
             document.getElementById('paywallBackdrop').classList.add('active');
+            if (!rcPackages) window.fetchOfferings();
         };
 
         window.hidePaywall = function () {
@@ -889,17 +906,109 @@
             document.getElementById('paywallBackdrop').classList.remove('active');
         };
 
-        window.upgradePremium = async function (tier) {
-            if (!currentUser) return;
+        let selectedPackageIndex = 0;
+
+        window.selectPlan = function (identifier) {
+            const index = rcPackages.findIndex(p => p.identifier === identifier);
+            if (index !== -1) {
+                selectedPackageIndex = index;
+                document.querySelectorAll('.plan-card').forEach((card, i) => {
+                    if (i === index) {
+                        card.style.border = '2px solid var(--primary)';
+                        card.style.opacity = '1';
+                    } else {
+                        card.style.border = '1px solid var(--border)';
+                        card.style.opacity = '0.6';
+                    }
+                });
+                const subBtn = document.getElementById('paywallSubscribeBtn');
+                if (subBtn) subBtn.disabled = false;
+            }
+        };
+
+        window.triggerSelectedPurchase = function () {
+            if (typeof selectedPackageIndex !== 'undefined' && rcPackages && rcPackages.length > 0) {
+                window.triggerPurchase(selectedPackageIndex);
+            }
+        };
+
+        window.fetchOfferings = async function () {
+            if (!purchases) return;
             try {
-                await setDoc(doc(db, 'users', currentUser.uid), { isPremium: true, subscriptionTier: tier }, { merge: true });
-                currentUser.isPremium = true;
-                currentUser.subscriptionTier = tier;
-                window.hidePaywall();
-                window.renderAdPlaceholder();
-                alert(`Successfully upgraded to ${tier} tier! All Pro features unlocked.`);
+                const offerings = await purchases.getOfferings();
+
+                // 1. Safety Check: Ensure standard_v2 offering and packages exist
+                if (offerings.all && offerings.all.standard_v2 && offerings.all.standard_v2.availablePackages) {
+                    const packages = offerings.all.standard_v2.availablePackages;
+                    rcPackages = packages;
+                    const container = document.getElementById('paywallOfferingsList');
+                    if (!container) return;
+
+                    container.innerHTML = '';
+
+                    console.log(`TOTAL PACKAGES FOUND: ${packages.length}`);
+                    packages.forEach(p => console.log(`- ${p.identifier}:`, p));
+
+                    // 2. Loop through ALL packages (Monthly, Quarterly, Yearly)
+                    packages.forEach(pkg => {
+                        // 3. Web SDK Currency Formatting (cents to dollars)
+                        // Note: RevenueCat Web SDK often stores this under .amount rather than .price
+                        const rawPrice = pkg.rcBillingProduct?.currentPrice?.amount || pkg.rcBillingProduct?.currentPrice?.price || pkg.product?.price;
+                        const displayPrice = rawPrice ? '$' + (rawPrice / 100).toFixed(2) : 'Updating...';
+
+                        const title = pkg.product?.title || pkg.rcBillingProduct?.displayName || 'Pro Subscription';
+                        const description = pkg.product?.description || pkg.rcBillingProduct?.description || 'Unlock all premium features.';
+                        const identifier = pkg?.identifier ?? '';
+
+                        // 4. Dynamic HTML Container Generation
+                        container.innerHTML += `
+                            <div class="plan-card card" style="border: 1px solid var(--border); padding: 15px; margin-bottom: 10px; cursor: pointer; transition: 0.2s;" onclick="window.selectPlan('${identifier}')">
+                                <h3 style="margin: 0; color: var(--primary);">${title}</h3>
+                                <p class="price" style="margin: 5px 0; font-weight: 900; font-size: 1.2rem;">${displayPrice}</p>
+                                <p class="description" style="margin: 0; font-size: 0.75rem; color: #94a3b8;">${description}</p>
+                            </div>
+                        `;
+                    });
+
+                    if (rcPackages.length > 0) {
+                        setTimeout(() => window.selectPlan(rcPackages[0].identifier), 50);
+                    }
+                } else {
+                    console.error("No available packages found in RevenueCat.", offerings);
+                    const container = document.getElementById('paywallOfferingsList');
+                    if (container) container.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 20px; font-weight: 800;">No active packages found in RevenueCat.</div>`;
+                }
+            } catch (e) {
+                console.error("fetchOfferings error:", e);
+                const container = document.getElementById('paywallOfferingsList');
+                if (container) container.innerHTML = `<div style="text-align: center; color: var(--danger); padding: 20px; font-weight: 800;">Error loading tiers.</div>`;
+            }
+        };
+
+        window.triggerPurchase = async function (packageIndex) {
+            if (!currentUser || !purchases || !rcPackages) return;
+            const pkg = rcPackages[packageIndex];
+
+            try {
+                // Show loading state...
+                document.getElementById('paywallOfferingsList').innerHTML = `<div style="text-align: center; color: var(--primary); padding: 20px;">Processing Transaction...</div>`;
+
+                const { customerInfo } = await purchases.purchasePackage(pkg);
+
+                // Check if the user has the active premium entitlement
+                if (customerInfo.entitlements.active.premium) {
+                    await setDoc(doc(db, 'users', currentUser.uid), { isPremium: true, subscriptionTier: pkg.identifier }, { merge: true });
+                    currentUser.isPremium = true;
+                    currentUser.subscriptionTier = pkg.identifier;
+                    window.hidePaywall();
+                    window.renderAdPlaceholder();
+                    alert(`Successfully unlocked Pro! Welcome aboard.`);
+                }
             } catch (err) {
-                alert('Upgrade failed: ' + err.message);
+                if (!err.userCancelled) {
+                    alert('Transaction failed: ' + err.message);
+                }
+                window.fetchOfferings(); // Re-render if cancelled
             }
         };
 
@@ -911,13 +1020,22 @@
             document.getElementById('filterBackdrop').classList.toggle('active');
         };
 
-        window.switchAppTab = function (id, btn) {
+        window.switchAppTab = async function (id, btn) {
             if (!currentUser) return;
 
-            // Premium Gating Logic
-            if ((id === 'analyticsTab' || id === 'vaultTab') && !currentUser.isPremium) {
-                window.showPaywall();
-                return;
+            // Dynamic Premium Gating Logic via SDK
+            if (id === 'analyticsTab' || id === 'vaultTab') {
+                if (!purchases) return window.showPaywall();
+                try {
+                    const customerInfo = await purchases.getCustomerInfo();
+                    if (!customerInfo.entitlements.active.premium) {
+                        window.showPaywall();
+                        return;
+                    }
+                } catch (e) {
+                    window.showPaywall();
+                    return;
+                }
             }
 
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -935,8 +1053,10 @@
             const amountStr = document.getElementById('vaultAmount').value;
             const cat = document.getElementById('vaultCategory').value;
             const notes = document.getElementById('vaultNotes').value;
+            const odometer = document.getElementById('vaultOdometer').value;
+            const editId = document.getElementById('vaultEditId').value;
 
-            if (!dateStr || !amountStr) return alert("Please fill out Date and Amount.");
+            if (!dateStr || !amountStr) return alert("Please fill out Date and Cost.");
 
             const expenseData = {
                 uid: currentUser.uid,
@@ -944,15 +1064,26 @@
                 date: new Date(dateStr).toLocaleDateString(),
                 amount: parseFloat(amountStr).toFixed(2),
                 category: cat,
+                odometer: odometer || null,
                 notes: notes,
                 is_shared: true
             };
 
             try {
-                await addDoc(collection(db, "expenses"), expenseData);
+                if (editId) {
+                    await updateDoc(doc(db, "expenses", editId), expenseData);
+                    document.getElementById('vaultEditId').value = '';
+                    document.getElementById('vaultSubmitBtn').innerText = 'Save Expense';
+                    document.getElementById('vaultFormTitle').innerText = 'Log Vehicle Maintenance';
+                    alert("Expense updated securely! 🔒");
+                } else {
+                    await addDoc(collection(db, "expenses"), expenseData);
+                    alert("Expense logged securely to the Vault! 🔒");
+                }
+
                 document.getElementById('vaultAmount').value = '';
                 document.getElementById('vaultNotes').value = '';
-                alert("Expense logged securely to the Vault! 🔒");
+                document.getElementById('vaultOdometer').value = '';
                 window.fetchVaultHistory();
             } catch (error) {
                 alert("Error saving expense: " + error.message);
@@ -969,7 +1100,22 @@
                 const snap = await getDocs(q);
 
                 let history = [];
-                snap.forEach(doc => history.push(doc.data()));
+                let yearTotal = 0;
+                const currentYear = new Date().getFullYear();
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    data.id = doc.id;
+                    history.push(data);
+
+                    // Accumulate current year maintenance costs
+                    const expDate = new Date(data.timestamp || data.date);
+                    if (expDate.getFullYear() === currentYear && (data.category === 'Maintenance' || data.category === 'Insurance')) {
+                        yearTotal += parseFloat(data.amount) || 0;
+                    }
+                });
+
+                document.getElementById('vaultYearSummary').innerText = `$${yearTotal.toFixed(2)}`;
 
                 history.sort((a, b) => b.timestamp - a.timestamp);
 
@@ -979,17 +1125,59 @@
                 }
 
                 list.innerHTML = history.map(t => `
-                <div class="history-item" style="border-left-color: var(--warning);">
+                <div class="history-item" style="border-left-color: var(--warning); display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                        <div class="h-details">${t.date}</div>
+                        <div class="h-details">${t.date} ${t.odometer ? `| Odometer: ${t.odometer}` : ''}</div>
                         <div style="font-weight:900; color:var(--warning);">${t.category}</div>
                         <div class="h-details" style="font-size: 0.6rem;">${t.notes || 'No notes'}</div>
                     </div>
-                    <div class="h-profit" style="color: var(--danger);">-$${parseFloat(t.amount).toFixed(2)}</div>
+                    <div style="text-align: right;">
+                        <div class="h-profit" style="color: var(--danger); margin-bottom: 5px;">-$${parseFloat(t.amount).toFixed(2)}</div>
+                        <div style="display: flex; gap: 5px; justify-content: flex-end;">
+                            <button class="btn-outline" style="padding: 2px 8px; font-size: 0.6rem; margin: 0;" onclick="window.editVaultExpense('${t.id}')">Edit</button>
+                            <button class="btn-main" style="padding: 2px 8px; font-size: 0.6rem; margin: 0; background: var(--danger);" onclick="window.deleteVaultExpense('${t.id}')">Delete</button>
+                        </div>
+                    </div>
                 </div>
                 `).join('');
             } catch (err) {
                 list.innerHTML = `<div style="text-align:center; color:var(--danger);">Error loading Vault.</div>`;
+            }
+        };
+
+        window.deleteVaultExpense = async function (id) {
+            if (!confirm("Are you sure you want to delete this expense?")) return;
+            try {
+                await deleteDoc(doc(db, "expenses", id));
+                window.fetchVaultHistory();
+            } catch (err) {
+                alert("Error deleting expense: " + err.message);
+            }
+        };
+
+        window.editVaultExpense = async function (id) {
+            try {
+                const docSnap = await getDoc(doc(db, "expenses", id));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    document.getElementById('vaultEditId').value = id;
+                    document.getElementById('vaultAmount').value = data.amount;
+                    document.getElementById('vaultCategory').value = data.category;
+                    document.getElementById('vaultNotes').value = data.notes || '';
+                    document.getElementById('vaultOdometer').value = data.odometer || '';
+
+                    // Format date for date input
+                    const d = new Date(data.timestamp || data.date);
+                    document.getElementById('vaultDate').value = d.toISOString().split('T')[0];
+
+                    document.getElementById('vaultSubmitBtn').innerText = 'Update Expense';
+                    document.getElementById('vaultFormTitle').innerText = 'Edit Vehicle Maintenance';
+
+                    // Switch to the Vault tab if not already active to ensure visibility
+                    document.getElementById('vaultTab').scrollIntoView({ behavior: 'smooth' });
+                }
+            } catch (err) {
+                alert("Error fetching expense: " + err.message);
             }
         };
 
@@ -1315,16 +1503,18 @@
         };
 
         window.exportTaxCSV = async function () {
-            if (!currentUser) return;
+            if (!currentUser || !purchases) return;
 
-            // Premium Paywall
-            if (!currentUser.isPremium) {
-                window.showPaywall();
-                return;
-            }
-
-            const year = document.getElementById('exportYear').value;
             try {
+                // Gatekeeper Check via SDK
+                const customerInfo = await purchases.getCustomerInfo();
+                if (!customerInfo.entitlements.active.premium) {
+                    window.showPaywall();
+                    return;
+                }
+
+                const year = document.getElementById('exportYear').value;
+
                 // Fetch shifts and expenses
                 const qShifts = query(collection(db, "shifts"), where("uid", "==", currentUser.uid));
                 const snapShifts = await getDocs(qShifts);
@@ -1333,19 +1523,17 @@
                 const snapExp = await getDocs(qExp);
 
                 let totalGross = 0;
-                let totalCarExpenses = 0;
+                let totalMiles = 0;
                 let totalSupplies = 0;
                 let totalOther = 0;
-                let totalFees = 0; // Placeholder if fees are tracked later
+                let totalFees = 0;
 
                 snapShifts.forEach((doc) => {
                     const d = doc.data();
                     const shiftDate = new Date(d.timestamp || d.date);
                     if (shiftDate.getFullYear().toString() === year) {
                         totalGross += parseFloat(d.gross) || 0;
-                        const gas = parseFloat(d.gas_cost) || 0;
-                        const maint = parseFloat(d.maint_cost) || 0;
-                        totalCarExpenses += (gas + maint);
+                        totalMiles += parseFloat(d.miles) || 0;
                     }
                 });
 
@@ -1354,25 +1542,28 @@
                     const expDate = new Date(d.timestamp || d.date);
                     if (expDate.getFullYear().toString() === year) {
                         const amt = parseFloat(d.amount) || 0;
-                        if (d.category === 'Maintenance' || d.category === 'Insurance') {
-                            totalCarExpenses += amt;
-                        } else if (d.category === 'Supplies') {
+                        if (d.category === 'Supplies') {
                             totalSupplies += amt;
-                        } else {
+                        } else if (d.category !== 'Maintenance' && d.category !== 'Insurance') {
                             totalOther += amt; // e.g. Cellular
                         }
+                        // Maintenance and Insurance are superseded by Standard Mileage Deduction
                     }
                 });
 
+                // Standard Mileage Deduction Calculation (2024 IRS Rate = 67 cents/mile)
+                const irsRate = 0.67;
+                const totalCarExpenses = totalMiles * irsRate;
+
                 // Generate CSV
                 let csvContent = "data:text/csv;charset=utf-8,";
-                csvContent += "IRS Schedule C Category,Amount ($)\n";
-                csvContent += `Total Gross Receipts,${totalGross.toFixed(2)}\n`;
-                csvContent += `Car and Truck Expenses,${totalCarExpenses.toFixed(2)}\n`;
-                csvContent += `Supplies,${totalSupplies.toFixed(2)}\n`;
-                csvContent += `Other Business Expenses,${totalOther.toFixed(2)}\n`;
-                csvContent += `Commissions and Fees,${totalFees.toFixed(2)}\n`;
-                csvContent += `NET PROFIT,${(totalGross - totalCarExpenses - totalSupplies - totalOther - totalFees).toFixed(2)}\n`;
+                csvContent += "Category,Amount ($),Notes\n";
+                csvContent += `Total Gross Receipts,${totalGross.toFixed(2)},\n`;
+                csvContent += `Car and Truck Expenses,${totalCarExpenses.toFixed(2)},Standard Mileage Deduction (${totalMiles.toFixed(1)} miles @ $${irsRate}/mi)\n`;
+                csvContent += `Supplies,${totalSupplies.toFixed(2)},\n`;
+                csvContent += `Other Business Expenses,${totalOther.toFixed(2)},\n`;
+                csvContent += `Commissions and Fees,${totalFees.toFixed(2)},\n`;
+                csvContent += `NET PROFIT,${(totalGross - totalCarExpenses - totalSupplies - totalOther - totalFees).toFixed(2)},\n`;
 
                 const encodedUri = encodeURI(csvContent);
                 const link = document.createElement("a");
