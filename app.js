@@ -68,6 +68,13 @@ const TAX_MILEAGE_RATES = {
 };
 
 const PREMIUM_TABS = new Set(["vault", "analytics"]);
+const SHARE_ASSET_ROUTE = "./__gigflow-share/";
+const RUNTIME_DB = "gigflow-runtime";
+const TRACKING_STORE = "tracking";
+const ACTIVE_TRACKING_KEY = "active";
+const DEFAULT_TRACKING_STALE_MS = 10 * 60 * 1000;
+const INSTALL_PROMPT_DISMISSED_KEY = "gigflow-install-prompt-dismissed";
+const INSTALL_PROMPT_ACCEPTED_KEY = "gigflow-install-prompt-accepted";
 
 const firebaseApp = initializeApp(FIREBASE_CONFIG);
 const auth = getAuth(firebaseApp);
@@ -101,6 +108,11 @@ const state = {
   shifts: [],
   expenses: [],
   latestCalc: null,
+  ocrWorker: null,
+  geoWatchId: null,
+  shiftTrackingActive: false,
+  lastOcrParsed: null,
+  deferredInstallPrompt: null,
   charts: {
     profit: null,
     breakdown: null
@@ -139,6 +151,13 @@ function cacheElements() {
     "distanceDisplay",
     "gasDisplay",
     "shiftStatus",
+    "shiftTrackingToggle",
+    "trackingStateLabel",
+    "trackingStatus",
+    "coopPartnerId",
+    "vehicleSeats",
+    "vehicleCargoLiters",
+    "coopAvailable",
     "adPanel",
     "historyList",
     "filterStatus",
@@ -164,7 +183,23 @@ function cacheElements() {
     "paywallSheet",
     "planList",
     "paywallStatus",
-    "subscribeButton"
+    "subscribeButton",
+    "offerOcrPanel",
+    "ocrStatus",
+    "ocrResult",
+    "ocrReview",
+    "ocrPlatformConfirm",
+    "ocrEarningsConfirm",
+    "ocrMilesConfirm",
+    "ocrPassengerFare",
+    "dataUnionConsent",
+    "submitDataUnionButton",
+    "dataUnionStatus",
+    "installPromptBackdrop",
+    "installPromptModal",
+    "installPromptButton",
+    "installPromptStatus",
+    "installFallbackCopy"
   ].forEach((id) => {
     ui[id] = byId(id);
   });
@@ -217,6 +252,96 @@ function timestampFromDateInput(value) {
   const dateStart = new Date(`${value}T00:00:00`).getTime();
   const dayOffset = Date.now() % 86400000;
   return dateStart + dayOffset;
+}
+
+function runtimeDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(RUNTIME_DB, 1);
+
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(TRACKING_STORE)) {
+        request.result.createObjectStore(TRACKING_STORE);
+      }
+    };
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function runtimeStore(mode, callback) {
+  const db = await runtimeDb();
+
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(TRACKING_STORE, mode);
+    const store = transaction.objectStore(TRACKING_STORE);
+    const request = callback(store);
+
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+    transaction.oncomplete = () => db.close();
+    transaction.onerror = () => {
+      db.close();
+      reject(transaction.error);
+    };
+  });
+}
+
+function readTrackingState() {
+  return runtimeStore("readonly", (store) => store.get(ACTIVE_TRACKING_KEY));
+}
+
+async function writeTrackingState(patch) {
+  const current = await readTrackingState().catch(() => null);
+  const next = {
+    ...(current || {}),
+    ...patch,
+    updatedAt: Date.now()
+  };
+
+  await runtimeStore("readwrite", (store) => store.put(next, ACTIVE_TRACKING_KEY));
+  return next;
+}
+
+function urlBase64ToUint8Array(value) {
+  const padding = "=".repeat((4 - value.length % 4) % 4);
+  const base64 = `${value}${padding}`.replace(/-/g, "+").replace(/_/g, "/");
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((char) => char.charCodeAt(0)));
+}
+
+async function postJson(url, body, adminToken = "") {
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(adminToken ? { Authorization: `Bearer ${adminToken}` } : {})
+    },
+    body: JSON.stringify(body)
+  });
+
+  if (!response.ok) {
+    throw new Error(`Request failed: ${response.status}`);
+  }
+
+  return response.json().catch(() => ({}));
+}
+
+async function fetchVapidPublicKey(apiBase = "") {
+  const response = await fetch(`${apiBase}/api/push/vapid-public-key`, {
+    cache: "no-store"
+  });
+
+  if (!response.ok) {
+    throw new Error("Could not fetch the VAPID public key.");
+  }
+
+  const payload = await response.json();
+  if (!payload.publicKey) {
+    throw new Error("Push backend did not return a VAPID public key.");
+  }
+
+  return payload.publicKey;
 }
 
 function hasPremiumEntitlement(customerInfo) {
@@ -622,6 +747,333 @@ function updateCalculator() {
   ui.distanceDisplay.textContent = `${calc.miles.toFixed(1)} mi`;
   ui.gasDisplay.textContent = currency(calc.gasCost);
   return calc;
+}
+
+function renderTrackingState() {
+  if (!ui.shiftTrackingToggle) return;
+
+  const card = ui.shiftTrackingToggle.closest(".tracking-card");
+  card?.classList.toggle("is-active", state.shiftTrackingActive);
+  ui.trackingStateLabel.textContent = state.shiftTrackingActive ? "On Shift" : "Off Shift";
+  ui.shiftTrackingToggle.textContent = state.shiftTrackingActive ? "End Shift" : "Start Shift";
+  ui.shiftTrackingToggle.setAttribute("aria-pressed", String(state.shiftTrackingActive));
+}
+
+function trackingOptionsFromUi() {
+  const geofences = buildDefaultGeofences();
+
+  return {
+    apiBase: window.GIG_FLOW_PUSH_API_BASE || "",
+    intervalMs: 3 * 60 * 1000,
+    geofences,
+    routeWindows: [{
+      startAt: Date.now(),
+      endAt: Date.now() + 12 * 60 * 60 * 1000
+    }],
+    partnerId: ui.coopPartnerId.value.trim(),
+    vehicleCapacity: {
+      seats: numberValue(ui.vehicleSeats, 0),
+      cargoLiters: numberValue(ui.vehicleCargoLiters, 0)
+    }
+  };
+}
+
+function buildDefaultGeofences() {
+  const platform = ui.platform.value || "Active gig zone";
+  return [{
+    name: `${platform} active zone`,
+    latitude: 0,
+    longitude: 0,
+    radiusMeters: 250
+  }];
+}
+
+async function toggleShiftTrackingFromUi() {
+  if (!state.authUser) {
+    setStatus(ui.trackingStatus, "Sign in before starting shift tracking.", "error");
+    return;
+  }
+
+  ui.shiftTrackingToggle.disabled = true;
+  setStatus(ui.trackingStatus, state.shiftTrackingActive ? "Ending shift..." : "Starting shift...");
+
+  try {
+    const options = trackingOptionsFromUi();
+
+    if (state.shiftTrackingActive) {
+      const endShift = window.GigFlow?.endShiftTracking || endShiftTracking;
+      await endShift({ apiBase: options.apiBase });
+      state.shiftTrackingActive = false;
+      setStatus(ui.trackingStatus, "Shift tracking stopped.", "success");
+    } else {
+      const startShift = window.GigFlow?.startShiftTracking || startShiftTracking;
+      await startShift(options);
+      state.shiftTrackingActive = true;
+      setStatus(ui.trackingStatus, "Shift tracking is active.", "success");
+
+      if (ui.coopAvailable.checked) {
+        const syncTelemetry = window.GigFlow?.syncCoopDriverTelemetry || syncCoopDriverTelemetry;
+        await syncTelemetry({
+          apiBase: options.apiBase,
+          partnerId: options.partnerId,
+          vehicleCapacity: options.vehicleCapacity,
+          status: "AVAILABLE_FOR_COOP"
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Shift tracking toggle failed.", error);
+    setStatus(ui.trackingStatus, error.message, "error");
+  } finally {
+    ui.shiftTrackingToggle.disabled = false;
+    renderTrackingState();
+  }
+}
+
+async function handleSharedOfferImage(shareId) {
+  if (!shareId) return;
+
+  ui.offerOcrPanel.hidden = false;
+  ui.ocrResult.hidden = true;
+  setStatus(ui.ocrStatus, "Reading shared gig offer locally...");
+
+  try {
+    const response = await fetch(`${SHARE_ASSET_ROUTE}${encodeURIComponent(shareId)}`, {
+      cache: "no-store"
+    });
+
+    if (!response.ok) {
+      throw new Error("The shared screenshot was not available to the app.");
+    }
+
+    const image = await response.blob();
+    const parsed = await runOfferOcr(image);
+    applyParsedOffer(parsed);
+    renderOcrResult(parsed);
+  } catch (error) {
+    console.error("Shared offer OCR failed.", error);
+    setStatus(ui.ocrStatus, error.message, "error");
+  }
+}
+
+function runOfferOcr(image) {
+  if (!window.Worker) {
+    return Promise.reject(new Error("This browser does not support OCR workers."));
+  }
+
+  const requestId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+  const worker = new Worker("./ocr-worker.js", { name: "gig-flow-offer-ocr" });
+  state.ocrWorker?.terminate();
+  state.ocrWorker = worker;
+
+  return new Promise((resolve, reject) => {
+    worker.onmessage = (event) => {
+      const message = event.data || {};
+      if (message.requestId !== requestId) return;
+
+      if (message.type === "progress") {
+        const percent = Math.round((message.progress?.progress || 0) * 100);
+        const label = message.progress?.status || "processing";
+        setStatus(ui.ocrStatus, `OCR ${label} ${percent}%`);
+        return;
+      }
+
+      if (message.type === "result") {
+        worker.terminate();
+        if (state.ocrWorker === worker) state.ocrWorker = null;
+        resolve(message.parsed || {});
+        return;
+      }
+
+      if (message.type === "error") {
+        worker.terminate();
+        if (state.ocrWorker === worker) state.ocrWorker = null;
+        reject(new Error(message.message || "OCR failed."));
+      }
+    };
+
+    worker.onerror = (error) => {
+      worker.terminate();
+      if (state.ocrWorker === worker) state.ocrWorker = null;
+      reject(new Error(error.message || "OCR worker failed."));
+    };
+
+    worker.postMessage({ type: "recognize", requestId, image });
+  });
+}
+
+function applyParsedOffer(parsed) {
+  state.lastOcrParsed = parsed || null;
+
+  if (parsed.platform && [...ui.platform.options].some((option) => option.value === parsed.platform)) {
+    ui.platform.value = parsed.platform;
+  }
+
+  if (Number.isFinite(parsed.grossAmount)) {
+    ui.basePay.value = parsed.grossAmount.toFixed(2);
+    ui.tips.value = "";
+    ui.promo.value = "";
+  }
+
+  if (Number.isFinite(parsed.miles)) {
+    ui.activeMiles.value = parsed.miles.toFixed(1);
+    ui.deadheadMiles.value = "";
+  }
+
+  updateCalculator();
+}
+
+function renderOcrResult(parsed) {
+  const amount = Number.isFinite(parsed.grossAmount) ? currency(parsed.grossAmount) : "Not found";
+  const miles = Number.isFinite(parsed.miles) ? `${parsed.miles.toFixed(1)} mi` : "Not found";
+  const platform = parsed.platform || "Unknown";
+  const confidence = Math.round((parsed.confidence || 0) * 100);
+
+  ui.ocrResult.innerHTML = `
+    <span>Platform <strong>${escapeHtml(platform)}</strong></span>
+    <span>Offer <strong>${escapeHtml(amount)}</strong></span>
+    <span>Miles <strong>${escapeHtml(miles)}</strong></span>
+  `;
+  ui.ocrResult.hidden = false;
+  renderOcrReview(parsed);
+  setStatus(ui.ocrStatus, `Offer parsed locally with ${confidence}% confidence.`, "success");
+  maybeShowInstallPromptAfterOcr(parsed);
+}
+
+function maybeShowInstallPromptAfterOcr(parsed) {
+  const hasUsefulData = Boolean(parsed?.platform || Number.isFinite(parsed?.grossAmount) || Number.isFinite(parsed?.miles));
+  if (!hasUsefulData || !ui.installPromptModal) return;
+  if (isPwaInstalled()) return;
+  if (localStorage.getItem(INSTALL_PROMPT_DISMISSED_KEY) || localStorage.getItem(INSTALL_PROMPT_ACCEPTED_KEY)) return;
+
+  openInstallPrompt();
+}
+
+function openInstallPrompt() {
+  ui.installPromptBackdrop.hidden = false;
+  ui.installPromptModal.hidden = false;
+  ui.installFallbackCopy.hidden = Boolean(state.deferredInstallPrompt);
+  ui.installPromptButton.textContent = state.deferredInstallPrompt ? "Install" : "Show Me How";
+  setStatus(ui.installPromptStatus);
+}
+
+function closeInstallPrompt() {
+  ui.installPromptBackdrop.hidden = true;
+  ui.installPromptModal.hidden = true;
+}
+
+function dismissInstallPrompt() {
+  localStorage.setItem(INSTALL_PROMPT_DISMISSED_KEY, String(Date.now()));
+  closeInstallPrompt();
+}
+
+async function confirmInstallPrompt() {
+  if (!state.deferredInstallPrompt) {
+    ui.installFallbackCopy.hidden = false;
+    setStatus(ui.installPromptStatus, "Use your browser menu to add GIG FLOW to your home screen.");
+    return;
+  }
+
+  const promptEvent = state.deferredInstallPrompt;
+  state.deferredInstallPrompt = null;
+  ui.installPromptButton.disabled = true;
+  setStatus(ui.installPromptStatus, "Opening install sheet...");
+
+  try {
+    promptEvent.prompt();
+    const choice = await promptEvent.userChoice;
+    if (choice?.outcome === "accepted") {
+      localStorage.setItem(INSTALL_PROMPT_ACCEPTED_KEY, String(Date.now()));
+      setStatus(ui.installPromptStatus, "Install accepted.", "success");
+      closeInstallPrompt();
+    } else {
+      localStorage.setItem(INSTALL_PROMPT_DISMISSED_KEY, String(Date.now()));
+      setStatus(ui.installPromptStatus, "Install dismissed.");
+      closeInstallPrompt();
+    }
+  } catch (error) {
+    console.error("Install prompt failed.", error);
+    setStatus(ui.installPromptStatus, "Install prompt was not available.", "error");
+  } finally {
+    ui.installPromptButton.disabled = false;
+  }
+}
+
+function isPwaInstalled() {
+  return window.matchMedia("(display-mode: standalone)").matches
+    || window.navigator.standalone === true;
+}
+
+function renderOcrReview(parsed) {
+  ui.ocrReview.hidden = false;
+  ui.ocrPlatformConfirm.value = parsed.platform || ui.platform.value || "";
+  ui.ocrEarningsConfirm.value = Number.isFinite(parsed.grossAmount) ? parsed.grossAmount.toFixed(2) : "";
+  ui.ocrMilesConfirm.value = Number.isFinite(parsed.miles) ? parsed.miles.toFixed(1) : "";
+  ui.ocrPassengerFare.value = "";
+  ui.dataUnionConsent.checked = false;
+  setStatus(ui.dataUnionStatus);
+}
+
+function applyOcrConfirmationFromUi() {
+  const parsed = {
+    ...(state.lastOcrParsed || {}),
+    platform: ui.ocrPlatformConfirm.value.trim(),
+    grossAmount: numberValue(ui.ocrEarningsConfirm),
+    miles: numberValue(ui.ocrMilesConfirm)
+  };
+
+  state.lastOcrParsed = parsed;
+  applyParsedOffer(parsed);
+  renderOcrResult(parsed);
+  setStatus(ui.dataUnionStatus, "Confirmed values applied to the calculator.", "success");
+}
+
+async function submitDataUnionFromUi() {
+  if (!state.authUser) {
+    setStatus(ui.dataUnionStatus, "Sign in before submitting anonymized data.", "error");
+    return;
+  }
+
+  if (!ui.dataUnionConsent.checked) {
+    setStatus(ui.dataUnionStatus, "Consent is required before submitting.", "error");
+    return;
+  }
+
+  const passengerFareEstimate = numberValue(ui.ocrPassengerFare);
+  if (passengerFareEstimate <= 0) {
+    setStatus(ui.dataUnionStatus, "Enter the passenger fare estimate first.", "error");
+    return;
+  }
+
+  const ocrPayload = {
+    platform: ui.ocrPlatformConfirm.value.trim(),
+    grossAmount: numberValue(ui.ocrEarningsConfirm),
+    miles: numberValue(ui.ocrMilesConfirm),
+    passengerFareEstimate
+  };
+
+  const tripContext = {
+    platform: ocrPayload.platform,
+    distanceMiles: ocrPayload.miles,
+    observedAtStart: new Date().toISOString()
+  };
+
+  ui.submitDataUnionButton.disabled = true;
+  setStatus(ui.dataUnionStatus, "Submitting anonymized trip economics...");
+
+  try {
+    const submitTrip = window.GigFlow?.submitDataUnionTrip || submitDataUnionTrip;
+    await submitTrip(ocrPayload, tripContext, {
+      consent: true,
+      ingestToken: window.GIG_FLOW_DRIVER_INGEST_TOKEN || ""
+    });
+    setStatus(ui.dataUnionStatus, "Anonymized trip submitted.", "success");
+  } catch (error) {
+    console.error("Data Union submission failed.", error);
+    setStatus(ui.dataUnionStatus, error.message, "error");
+  } finally {
+    ui.submitDataUnionButton.disabled = false;
+  }
 }
 
 function clearShiftInputs() {
@@ -1181,6 +1633,192 @@ function renderAdPanel() {
   ui.adPanel.hidden = state.isPremium;
 }
 
+async function enablePushTracking(options = {}) {
+  if (!state.authUser) {
+    throw new Error("Sign in before enabling push tracking.");
+  }
+
+  if (!("Notification" in window) || !("PushManager" in window) || !("serviceWorker" in navigator)) {
+    throw new Error("This browser does not support Web Push for PWAs.");
+  }
+
+  const vapidPublicKey = options.vapidPublicKey || window.GIG_FLOW_VAPID_PUBLIC_KEY;
+  if (!vapidPublicKey) {
+    throw new Error("Missing VAPID public key. Set window.GIG_FLOW_VAPID_PUBLIC_KEY before enabling push tracking.");
+  }
+
+  const permission = Notification.permission === "granted"
+    ? "granted"
+    : await Notification.requestPermission();
+
+  if (permission !== "granted") {
+    throw new Error("Notifications are required for background push tracking.");
+  }
+
+  const registration = await navigator.serviceWorker.ready;
+  const existing = await registration.pushManager.getSubscription();
+  const subscription = existing || await registration.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+  });
+
+  const apiBase = options.apiBase || window.GIG_FLOW_PUSH_API_BASE || "";
+  await postJson(`${apiBase}/api/push/subscribe`, {
+    uid: state.authUser.uid,
+    subscription
+  });
+
+  await writeTrackingState({
+    uid: state.authUser.uid,
+    pushEnabled: true,
+    staleAfterMs: options.staleAfterMs || DEFAULT_TRACKING_STALE_MS
+  });
+
+  return subscription;
+}
+
+async function startShiftTracking(options = {}) {
+  if (!state.authUser) {
+    throw new Error("Sign in before starting shift tracking.");
+  }
+
+  const apiBase = options.apiBase || window.GIG_FLOW_PUSH_API_BASE || "";
+  const vapidPublicKey = options.vapidPublicKey
+    || window.GIG_FLOW_VAPID_PUBLIC_KEY
+    || await fetchVapidPublicKey(apiBase);
+
+  await enablePushTracking({
+    ...options,
+    apiBase,
+    vapidPublicKey
+  });
+
+  await startForegroundTracking({
+    geofences: options.geofences || [],
+    routeWindows: options.routeWindows || [],
+    staleAfterMs: options.staleAfterMs || DEFAULT_TRACKING_STALE_MS
+  });
+
+  await postJson(`${apiBase}/api/push/tracking/start`, {
+    uid: state.authUser.uid,
+    intervalMs: options.intervalMs || 3 * 60 * 1000,
+    payload: {
+      geofences: options.geofences || [],
+      routeWindows: options.routeWindows || [],
+      staleAfterMs: options.staleAfterMs || DEFAULT_TRACKING_STALE_MS
+    }
+  }, options.adminToken);
+}
+
+async function endShiftTracking(options = {}) {
+  if (!state.authUser) {
+    throw new Error("Sign in before ending shift tracking.");
+  }
+
+  const apiBase = options.apiBase || window.GIG_FLOW_PUSH_API_BASE || "";
+  await stopForegroundTracking();
+  await postJson(`${apiBase}/api/push/tracking/stop`, {
+    uid: state.authUser.uid
+  }, options.adminToken);
+}
+
+async function syncCoopDriverTelemetry(options = {}) {
+  if (!state.authUser) {
+    throw new Error("Sign in before syncing co-op telemetry.");
+  }
+
+  const apiBase = options.apiBase || window.GIG_FLOW_PUSH_API_BASE || "";
+  const lastKnownLocation = options.location || (await readTrackingState())?.lastKnownLocation;
+
+  return postJson(`${apiBase}/api/internal/v1/driver-telemetry`, {
+    uid: state.authUser.uid,
+    status: options.status || "ON_SHIFT",
+    partnerId: options.partnerId || null,
+    location: lastKnownLocation || null,
+    vehicleCapacity: options.vehicleCapacity || {}
+  }, options.internalToken);
+}
+
+async function submitDataUnionTrip(ocrPayload, tripContext = {}, options = {}) {
+  if (!state.authUser) {
+    throw new Error("Sign in before submitting a Data Union trip.");
+  }
+
+  if (!options.consent) {
+    throw new Error("Driver consent is required before submitting anonymized trip data.");
+  }
+
+  const apiBase = options.apiBase || window.GIG_FLOW_PUSH_API_BASE || "";
+  return postJson(`${apiBase}/api/data-union/ingest`, {
+    consent: true,
+    driverSubject: options.driverSubject || undefined,
+    ocr: ocrPayload,
+    trip: tripContext
+  }, options.ingestToken);
+}
+
+async function startForegroundTracking(options = {}) {
+  if (!("geolocation" in navigator)) {
+    throw new Error("Geolocation is not available in this browser.");
+  }
+
+  const geofences = Array.isArray(options.geofences) ? options.geofences : [];
+  const routeWindows = Array.isArray(options.routeWindows) ? options.routeWindows : [];
+
+  await writeTrackingState({
+    uid: state.authUser?.uid || null,
+    active: true,
+    geofences,
+    routeWindows,
+    staleAfterMs: options.staleAfterMs || DEFAULT_TRACKING_STALE_MS
+  });
+
+  if (state.geoWatchId !== null) {
+    navigator.geolocation.clearWatch(state.geoWatchId);
+  }
+
+  state.geoWatchId = navigator.geolocation.watchPosition(
+    async (position) => {
+      await writeTrackingState({
+        lastKnownLocation: {
+          latitude: position.coords.latitude,
+          longitude: position.coords.longitude,
+          accuracy: position.coords.accuracy,
+          heading: position.coords.heading,
+          speed: position.coords.speed,
+          timestamp: position.timestamp || Date.now()
+        }
+      });
+    },
+    (error) => {
+      console.warn("Foreground geolocation tracking failed.", error);
+    },
+    {
+      enableHighAccuracy: true,
+      maximumAge: 30_000,
+      timeout: 20_000
+    }
+  );
+
+  return state.geoWatchId;
+}
+
+async function stopForegroundTracking() {
+  if (state.geoWatchId !== null && "geolocation" in navigator) {
+    navigator.geolocation.clearWatch(state.geoWatchId);
+  }
+
+  state.geoWatchId = null;
+  await writeTrackingState({ active: false });
+}
+
+async function saveGigGeofences(geofences = [], routeWindows = []) {
+  return writeTrackingState({
+    geofences,
+    routeWindows
+  });
+}
+
 function switchVisibleTab(tabName) {
   state.activeTab = tabName;
   document.querySelectorAll("[data-panel]").forEach((panel) => {
@@ -1216,10 +1854,56 @@ async function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
 
   try {
+    navigator.serviceWorker.addEventListener("message", handleServiceWorkerMessage);
     const registration = await navigator.serviceWorker.register("./sw.js");
     registration.update();
   } catch (error) {
     console.warn("Service worker registration failed.", error);
+  }
+}
+
+function bindInstallPromptEvents() {
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    state.deferredInstallPrompt = event;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    state.deferredInstallPrompt = null;
+    localStorage.setItem(INSTALL_PROMPT_ACCEPTED_KEY, String(Date.now()));
+    closeInstallPrompt();
+  });
+}
+
+function handleServiceWorkerMessage(event) {
+  const message = event.data || {};
+
+  if (message.type === "GIGFLOW_SHARE_IMAGE_READY") {
+    handleSharedOfferImage(message.shareId);
+    return;
+  }
+
+  if (message.type === "GIGFLOW_TRACKING_RESULT") {
+    console.info("GIG FLOW tracking wake result", message.result);
+  }
+}
+
+function processLaunchParams() {
+  const params = new URLSearchParams(window.location.search);
+  const shareId = params.get("shareId");
+  const shareError = params.get("shareError");
+
+  if (shareId) {
+    handleSharedOfferImage(shareId);
+  }
+
+  if (shareError) {
+    ui.offerOcrPanel.hidden = false;
+    setStatus(ui.ocrStatus, "GIG FLOW could not read the shared screenshot.", "error");
+  }
+
+  if (shareId || shareError || params.has("tracking")) {
+    window.history.replaceState({}, document.title, window.location.pathname);
   }
 }
 
@@ -1235,6 +1919,7 @@ function bindEvents() {
 
   ui.filterBackdrop.addEventListener("click", closeFilter);
   ui.paywallBackdrop.addEventListener("click", closePaywall);
+  ui.installPromptBackdrop.addEventListener("click", dismissInstallPrompt);
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
@@ -1267,6 +1952,9 @@ function bindEvents() {
     if (action === "signup") await signup();
     if (action === "logout") await logout();
     if (action === "archive-shift") await archiveShift();
+    if (action === "toggle-shift-tracking") await toggleShiftTrackingFromUi();
+    if (action === "apply-ocr-confirmation") applyOcrConfirmationFromUi();
+    if (action === "submit-data-union") await submitDataUnionFromUi();
     if (action === "open-filter") openFilter();
     if (action === "apply-filter") applyFilter();
     if (action === "reset-filter") resetFilter();
@@ -1277,21 +1965,41 @@ function bindEvents() {
     if (action === "export-tax") await exportTaxCsv();
     if (action === "close-paywall") closePaywall();
     if (action === "subscribe") await subscribeSelectedPlan();
+    if (action === "dismiss-install-prompt") dismissInstallPrompt();
+    if (action === "confirm-install-prompt") await confirmInstallPrompt();
   });
 }
 
 function init() {
   cacheElements();
+  bindInstallPromptEvents();
   bindEvents();
   setDefaultDates();
   renderPaywallPlans();
   updateCalculator();
+  renderTrackingState();
   registerServiceWorker();
+  processLaunchParams();
   onAuthStateChanged(auth, handleAuthChange);
 
   window.GigFlow = {
     fetchOfferings: () => fetchRevenueCatOfferings(),
     openPaywall,
+    handleSharedOfferImage,
+    enablePushTracking,
+    startShiftTracking,
+    endShiftTracking,
+    syncCoopDriverTelemetry,
+    submitDataUnionTrip,
+    showOcrResultForReview: (parsed) => {
+      ui.offerOcrPanel.hidden = false;
+      state.lastOcrParsed = parsed || null;
+      applyParsedOffer(parsed || {});
+      renderOcrResult(parsed || {});
+    },
+    startForegroundTracking,
+    stopForegroundTracking,
+    saveGigGeofences,
     state
   };
 }

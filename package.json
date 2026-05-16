@@ -1,0 +1,29 @@
+{
+  "name": "gig-flow-pwa",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs",
+    "test": "npm run test:static && npm run test:e2e",
+    "test:static": "node --check app.js && node tests/static.test.mjs",
+    "test:e2e": "playwright test tests/app.spec.mjs tests/e2e",
+    "test:revenuecat": "cross-env RUN_REVENUECAT_LIVE=1 playwright test tests/revenuecat.spec.mjs",
+    "push:dev": "node server/push-server.mjs",
+    "push:vapid": "web-push generate-vapid-keys",
+    "db:generate": "prisma generate",
+    "db:push": "node scripts/apply-schema.mjs",
+    "db:prisma-push": "prisma db push",
+    "preflight:prod": "node scripts/verify-production-env.mjs",
+    "playwright:install": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "cross-env": "^7.0.3"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "prisma": "^6.19.3",
+    "web-push": "^3.6.7"
+  }
+}

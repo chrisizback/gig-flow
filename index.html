@@ -53,18 +53,60 @@
     <main class="main-panel">
       <section class="tab-panel is-active" id="calculatorPanel" data-panel="calculator"
         aria-labelledby="calculatorTitle">
+        <div class="card tracking-card">
+          <div class="section-heading">
+            <span>Shift Tracking <span class="info-chip" tabindex="0"
+                aria-label="Shift Tracking starts background push checks, route windows, and co-op availability."
+                data-tooltip="Starts background push checks, route windows, and co-op availability.">i</span></span>
+          </div>
+          <div class="tracking-row">
+            <div>
+              <strong id="trackingStateLabel">Off Shift</strong>
+              <p>Push wake checks, route windows, and co-op availability.</p>
+            </div>
+            <button class="button button-primary compact" id="shiftTrackingToggle" type="button"
+              data-action="toggle-shift-tracking" aria-pressed="false">Start Shift</button>
+          </div>
+          <div class="form-grid">
+            <label class="field">
+              <span>Co-op Partner</span>
+              <input id="coopPartnerId" type="text" placeholder="coop-colorado">
+            </label>
+            <label class="field">
+              <span>Seats</span>
+              <input id="vehicleSeats" type="number" inputmode="numeric" min="0" max="12" value="4">
+            </label>
+            <label class="field">
+              <span>Cargo Liters</span>
+              <input id="vehicleCargoLiters" type="number" inputmode="numeric" min="0" value="0">
+            </label>
+            <label class="field checkbox-field">
+              <input id="coopAvailable" type="checkbox">
+              <span>Available for Co-op</span>
+            </label>
+          </div>
+          <p class="status-text" id="trackingStatus" role="status"></p>
+        </div>
+
         <div class="card">
           <div class="section-heading" id="calculatorTitle">
-            <span>Command Center</span>
+            <span>Command Center <span class="info-chip" tabindex="0"
+                aria-label="Command Center captures earnings, miles, and time to calculate real net profit."
+                data-tooltip="Enter pay, miles, and time to calculate real net profit.">i</span></span>
           </div>
 
           <label class="field">
             <span>Platform</span>
             <select id="platform">
               <option value="Uber">Uber</option>
+              <option value="Uber Eats">Uber Eats</option>
               <option value="DoorDash">DoorDash</option>
+              <option value="Grubhub">Grubhub</option>
+              <option value="Instacart">Instacart</option>
+              <option value="GoPuff">GoPuff</option>
               <option value="Amazon Flex">Amazon Flex</option>
               <option value="Walmart Spark">Walmart Spark</option>
+              <option value="Vcho Driver">Vcho Driver</option>
             </select>
           </label>
 
@@ -120,6 +162,48 @@
           <p class="status-text" id="shiftStatus" role="status"></p>
         </div>
 
+        <div class="card ocr-card" id="offerOcrPanel" hidden>
+          <div class="section-heading">
+            <span>Shared Offer OCR <span class="info-chip" tabindex="0"
+                aria-label="Shared Offer OCR reads gig screenshots locally and lets you confirm parsed values."
+                data-tooltip="Reads shared gig screenshots locally, then lets you confirm parsed values.">i</span></span>
+          </div>
+          <p class="status-text" id="ocrStatus" role="status">Waiting for shared screenshot.</p>
+          <div class="ocr-result" id="ocrResult" hidden></div>
+          <div class="ocr-review" id="ocrReview" hidden>
+            <div class="form-grid form-grid-three">
+              <label class="field">
+                <span>Platform</span>
+                <input id="ocrPlatformConfirm" type="text" placeholder="Platform">
+              </label>
+              <label class="field">
+                <span>Driver Payout</span>
+                <input id="ocrEarningsConfirm" type="number" inputmode="decimal" min="0" step="0.01"
+                  placeholder="0.00">
+              </label>
+              <label class="field">
+                <span>Mileage</span>
+                <input id="ocrMilesConfirm" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0.0">
+              </label>
+            </div>
+            <label class="field">
+              <span>Passenger Fare Estimate</span>
+              <input id="ocrPassengerFare" type="number" inputmode="decimal" min="0" step="0.01"
+                placeholder="Required for take-rate">
+            </label>
+            <label class="field checkbox-field">
+              <input id="dataUnionConsent" type="checkbox">
+              <span>Contribute anonymized trip economics to the Data Dividend pool</span>
+            </label>
+            <div class="button-row">
+              <button class="button button-ghost" type="button" data-action="apply-ocr-confirmation">Apply</button>
+              <button class="button button-primary" id="submitDataUnionButton" type="button"
+                data-action="submit-data-union">Submit Anonymized</button>
+            </div>
+            <p class="status-text" id="dataUnionStatus" role="status"></p>
+          </div>
+        </div>
+
         <section class="profit-panel" aria-label="Current shift profit">
           <span class="eyebrow">Net Profit</span>
           <strong id="profitDisplay">$0.00</strong>
@@ -139,7 +223,9 @@
 
         <div class="card">
           <div class="section-heading">
-            <span>Vehicle Profile</span>
+            <span>Vehicle Profile <span class="info-chip" tabindex="0"
+                aria-label="Vehicle Profile sets gas, MPG, and repair assumptions used in profit math."
+                data-tooltip="Sets gas, MPG, and repair assumptions used in profit math.">i</span></span>
           </div>
           <div class="form-grid">
             <label class="field">
@@ -166,7 +252,9 @@
 
       <section class="tab-panel" id="historyPanel" data-panel="history" aria-labelledby="historyTitle">
         <div class="panel-toolbar">
-          <h2 id="historyTitle">Shift History</h2>
+          <h2 id="historyTitle">Shift History <span class="info-chip" tabindex="0"
+              aria-label="Shift History shows archived shifts and lets you compare past work."
+              data-tooltip="Review archived shifts and compare past work.">i</span></h2>
           <button class="button button-ghost compact" type="button" data-action="open-filter">Sort & Filter</button>
         </div>
         <p class="filter-label" id="filterStatus">Showing: All Shifts</p>
@@ -175,13 +263,17 @@
 
       <section class="tab-panel" id="vaultPanel" data-panel="vault" aria-labelledby="vaultTitle">
         <div class="summary-strip">
-          <span>Current Tax Year Maintenance</span>
+          <span>Current Tax Year Maintenance <span class="info-chip" tabindex="0"
+              aria-label="Current Tax Year Maintenance totals maintenance and insurance expenses for this year."
+              data-tooltip="Totals maintenance and insurance expenses for this tax year.">i</span></span>
           <strong id="vaultYearTotal">$0.00</strong>
         </div>
 
         <div class="card">
           <div class="section-heading">
-            <span id="vaultTitle">Vehicle Vault</span>
+            <span id="vaultTitle">Vehicle Vault <span class="info-chip" tabindex="0"
+                aria-label="Vehicle Vault stores vehicle expenses for analytics and tax exports."
+                data-tooltip="Store vehicle expenses for analytics and tax exports.">i</span></span>
           </div>
           <input id="vaultEditId" type="hidden">
 
@@ -227,33 +319,43 @@
 
       <section class="tab-panel" id="analyticsPanel" data-panel="analytics" aria-labelledby="analyticsTitle">
         <div class="panel-toolbar">
-          <h2 id="analyticsTitle">Analytics</h2>
+          <h2 id="analyticsTitle">Analytics <span class="info-chip" tabindex="0"
+              aria-label="Analytics turns shifts and expenses into platform performance insights."
+              data-tooltip="Turns shifts and expenses into platform performance insights.">i</span></h2>
         </div>
 
         <div class="card chart-card">
           <div class="section-heading">
-            <span>Platform Comparison</span>
+            <span>Platform Comparison <span class="info-chip" tabindex="0"
+                aria-label="Platform Comparison compares net profit across gig apps."
+                data-tooltip="Compare net profit across gig apps.">i</span></span>
           </div>
           <canvas id="profitChart" aria-label="Net profit by platform"></canvas>
         </div>
 
         <div class="card">
           <div class="section-heading">
-            <span>Detailed Metrics</span>
+            <span>Detailed Metrics <span class="info-chip" tabindex="0"
+                aria-label="Detailed Metrics shows hourly rate, profit, and dollars per mile."
+                data-tooltip="See hourly rate, profit, and dollars per mile.">i</span></span>
           </div>
           <div id="analyticsSummary"></div>
         </div>
 
         <div class="card chart-card">
           <div class="section-heading">
-            <span>Earnings Breakdown</span>
+            <span>Earnings Breakdown <span class="info-chip" tabindex="0"
+                aria-label="Earnings Breakdown separates base pay, tips, and promos by platform."
+                data-tooltip="Separate base pay, tips, and promos by platform.">i</span></span>
           </div>
           <canvas id="breakdownChart" aria-label="Earnings breakdown by platform"></canvas>
         </div>
 
         <div class="card warning-card">
           <div class="section-heading warning">
-            <span>Tax Export</span>
+            <span>Tax Export <span class="info-chip" tabindex="0"
+                aria-label="Tax Export downloads a Schedule C style CSV from your logged work."
+                data-tooltip="Download a Schedule C style CSV from logged work.">i</span></span>
           </div>
           <label class="field">
             <span>Tax Year</span>
@@ -281,16 +383,23 @@
   <aside class="bottom-sheet" id="filterSheet" aria-labelledby="filterTitle" aria-modal="true" role="dialog" hidden>
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="section-heading">
-      <span id="filterTitle">Filter & Sort</span>
+      <span id="filterTitle">Filter & Sort <span class="info-chip" tabindex="0"
+          aria-label="Filter and Sort narrows history by platform and changes the order."
+          data-tooltip="Narrow history by platform and change the order.">i</span></span>
     </div>
     <label class="field">
       <span>Platform Filter</span>
       <select id="filterPlatform">
         <option value="All">All Platforms</option>
         <option value="Uber">Uber</option>
+        <option value="Uber Eats">Uber Eats</option>
         <option value="DoorDash">DoorDash</option>
+        <option value="Grubhub">Grubhub</option>
+        <option value="Instacart">Instacart</option>
+        <option value="GoPuff">GoPuff</option>
         <option value="Amazon Flex">Amazon Flex</option>
         <option value="Walmart Spark">Walmart Spark</option>
+        <option value="Vcho Driver">Vcho Driver</option>
       </select>
     </label>
     <label class="field">
@@ -314,7 +423,9 @@
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="paywall-header">
       <p class="studio">Flores Production Studios</p>
-      <h2 id="paywallTitle">GIG FLOW PRO</h2>
+      <h2 id="paywallTitle">GIG FLOW PRO <span class="info-chip" tabindex="0"
+          aria-label="GIG FLOW PRO unlocks premium analytics, vehicle vault, tax export, and no ads."
+          data-tooltip="Unlock premium analytics, vehicle vault, tax export, and no ads.">i</span></h2>
       <p>Unlock Analytics, Vault, tax export, and an ad-free command center.</p>
     </div>
 
@@ -323,6 +434,23 @@
     <button class="button button-primary" id="subscribeButton" type="button" data-action="subscribe" disabled>Subscribe
       Now</button>
     <button class="button button-ghost" type="button" data-action="close-paywall">Maybe Later</button>
+  </aside>
+
+  <div class="sheet-backdrop" id="installPromptBackdrop" hidden></div>
+  <aside class="install-modal" id="installPromptModal" aria-labelledby="installPromptTitle" aria-modal="true"
+    role="dialog" hidden>
+    <div class="install-icon" aria-hidden="true">GF</div>
+    <p class="studio">GIG FLOW PWA</p>
+    <h2 id="installPromptTitle">Keep This Speed On Deck</h2>
+    <p id="installPromptCopy">Data parsed in 0.8s! Install GIG FLOW to your home screen to enable background tracking
+      and faster offline processing.</p>
+    <p class="install-fallback" id="installFallbackCopy" hidden>On iPhone, tap Share, then Add to Home Screen.</p>
+    <div class="button-row">
+      <button class="button button-ghost" type="button" data-action="dismiss-install-prompt">Not Now</button>
+      <button class="button button-primary" id="installPromptButton" type="button"
+        data-action="confirm-install-prompt">Install</button>
+    </div>
+    <p class="status-text" id="installPromptStatus" role="status"></p>
   </aside>
 
   <script type="module" src="./app.js"></script>
