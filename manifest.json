@@ -1,12 +1,15 @@
 {
+  "id": "/",
   "name": "GIG FLOW: Pro Profit Engine",
   "short_name": "GIG FLOW",
-  "description": "Professional Profit and Expense Tracker for Gig Workers.",
+  "description": "A profit command center for gig economy workers.",
   "start_url": "./index.html",
+  "scope": "./",
   "display": "standalone",
-  "background_color": "#020617",
-  "theme_color": "#38bdf8",
   "orientation": "portrait",
+  "background_color": "#07111f",
+  "theme_color": "#38bdf8",
+  "categories": ["business", "finance", "productivity"],
   "icons": [
     {
       "src": "icons/icon-192.png",
@@ -17,7 +20,16 @@
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Log Shift",
+      "short_name": "Shift",
+      "url": "./index.html",
+      "description": "Open the GIG FLOW command center."
     }
   ]
 }
