@@ -1,4 +1,4 @@
-const CACHE_NAME = "gigflow-shell-v6";
+const CACHE_NAME = "gigflow-shell-v10";
 const APP_SHELL = [
   "./",
   "./index.html",

@@ -9,7 +9,11 @@
   "orientation": "portrait",
   "background_color": "#07111f",
   "theme_color": "#38bdf8",
-  "categories": ["business", "finance", "productivity"],
+  "categories": [
+    "business",
+    "finance",
+    "productivity"
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",

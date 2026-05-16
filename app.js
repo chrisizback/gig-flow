@@ -22,7 +22,7 @@ import {
   deleteDoc,
   updateDoc
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
-import { Purchases } from "https://esm.sh/@revenuecat/purchases-js@1.4.1";
+import { Purchases } from "https://esm.sh/@revenuecat/purchases-js@1.41.0";
 
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCZlSBbi7lZLBctmfHUdRrOARHpm7T93Ow",
@@ -33,7 +33,7 @@ const FIREBASE_CONFIG = {
   appId: "1:876072390705:web:cafdf507a03029981e4510"
 };
 
-const REVENUECAT_API_KEY = "strp_eLPKShujOJeFSMkVxndQSCcJJHn";
+const REVENUECAT_API_KEY = "rcb_jlWXOUxRmZngwIqocoryMfEpfGmK";
 const REVENUECAT_ENTITLEMENT = "premium";
 const OFFERING_ID = "standard_v2";
 
@@ -243,7 +243,10 @@ async function ensureUserProfile(user) {
 
 async function configureRevenueCat(userId) {
   if (!state.purchases) {
-    state.purchases = Purchases.configure(REVENUECAT_API_KEY, userId);
+    state.purchases = Purchases.configure({
+      apiKey: REVENUECAT_API_KEY,
+      appUserId: userId
+    });
     return state.purchases;
   }
 
@@ -435,7 +438,7 @@ function renderPaywallPlans() {
     ].filter(Boolean).join(" ");
 
     return `
-      <button class="${classes}" type="button" data-plan-id="${escapeHtml(plan.id)}" aria-pressed="${isSelected}">
+      <button class="${classes}" type="button" data-plan-id="${escapeHtml(plan.id)}" data-package-ready="${isAvailable}" aria-pressed="${isSelected}">
         <span>
           <strong class="plan-name">${escapeHtml(plan.label)}</strong>
           <span class="plan-note">${escapeHtml(isAvailable ? plan.note : "Waiting for RevenueCat package.")}</span>
@@ -482,9 +485,7 @@ async function subscribeSelectedPlan() {
   setStatus(ui.paywallStatus, `Opening checkout for ${plan.label}...`);
 
   try {
-    const purchaseResult = typeof state.purchases.purchase === "function"
-      ? await state.purchases.purchase({ rcPackage: pkg })
-      : await state.purchases.purchasePackage(pkg);
+    const purchaseResult = await state.purchases.purchase({ rcPackage: pkg });
 
     const customerInfo = purchaseResult.customerInfo || purchaseResult;
     if (!hasPremiumEntitlement(customerInfo)) {
@@ -1006,11 +1007,11 @@ function renderAnalytics() {
       </thead>
       <tbody>
         ${platforms.map((platform) => {
-          const data = aggregates[platform];
-          const totalHours = data.hours + data.waitMinutes / 60;
-          const hourly = totalHours > 0 ? data.profit / totalHours : 0;
-          const perMile = data.miles > 0 ? data.profit / data.miles : 0;
-          return `
+    const data = aggregates[platform];
+    const totalHours = data.hours + data.waitMinutes / 60;
+    const hourly = totalHours > 0 ? data.profit / totalHours : 0;
+    const perMile = data.miles > 0 ? data.profit / data.miles : 0;
+    return `
             <tr>
               <td>${escapeHtml(platform)}</td>
               <td class="positive">${currency(data.profit)}</td>
@@ -1018,7 +1019,7 @@ function renderAnalytics() {
               <td>${currency(perMile)}/mi</td>
             </tr>
           `;
-        }).join("")}
+  }).join("")}
       </tbody>
     </table>
   `;

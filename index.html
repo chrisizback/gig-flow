@@ -29,7 +29,8 @@
 
         <label class="field">
           <span>Password</span>
-          <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" minlength="6" required>
+          <input id="passwordInput" type="password" autocomplete="current-password" placeholder="Password" minlength="6"
+            required>
         </label>
 
         <button class="button button-primary" type="submit">Sign In</button>
@@ -50,7 +51,8 @@
     </header>
 
     <main class="main-panel">
-      <section class="tab-panel is-active" id="calculatorPanel" data-panel="calculator" aria-labelledby="calculatorTitle">
+      <section class="tab-panel is-active" id="calculatorPanel" data-panel="calculator"
+        aria-labelledby="calculatorTitle">
         <div class="card">
           <div class="section-heading" id="calculatorTitle">
             <span>Command Center</span>
@@ -69,7 +71,8 @@
           <div class="form-grid form-grid-three">
             <label class="field">
               <span>Base Pay</span>
-              <input id="basePay" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" data-calc-input>
+              <input id="basePay" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"
+                data-calc-input>
             </label>
             <label class="field">
               <span>Tips</span>
@@ -77,7 +80,8 @@
             </label>
             <label class="field">
               <span>Promo</span>
-              <input id="promo" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00" data-calc-input>
+              <input id="promo" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0.00"
+                data-calc-input>
             </label>
           </div>
 
@@ -89,15 +93,18 @@
           <div class="form-grid">
             <label class="field">
               <span>Active Miles</span>
-              <input id="activeMiles" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0" data-calc-input>
+              <input id="activeMiles" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0"
+                data-calc-input>
             </label>
             <label class="field">
               <span>Deadhead Miles</span>
-              <input id="deadheadMiles" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0" data-calc-input>
+              <input id="deadheadMiles" type="number" inputmode="decimal" min="0" step="0.1" placeholder="0"
+                data-calc-input>
             </label>
             <label class="field">
               <span>Wait Minutes</span>
-              <input id="waitMinutes" type="number" inputmode="numeric" min="0" step="1" placeholder="0" data-calc-input>
+              <input id="waitMinutes" type="number" inputmode="numeric" min="0" step="1" placeholder="0"
+                data-calc-input>
             </label>
             <label class="field">
               <span>Start Time</span>
@@ -145,7 +152,8 @@
             </label>
             <label class="field span-two">
               <span>Repair Fund Per Mile</span>
-              <input id="maintenanceRate" type="number" inputmode="decimal" min="0" step="0.01" value="0.05" data-calc-input>
+              <input id="maintenanceRate" type="number" inputmode="decimal" min="0" step="0.01" value="0.05"
+                data-calc-input>
             </label>
           </div>
         </div>
@@ -209,7 +217,8 @@
           </label>
 
           <button class="button button-primary" type="button" data-action="save-expense">Save Expense</button>
-          <button class="button button-ghost" type="button" data-action="cancel-expense-edit" hidden>Cancel Edit</button>
+          <button class="button button-ghost" type="button" data-action="cancel-expense-edit" hidden>Cancel
+            Edit</button>
           <p class="status-text" id="vaultStatus" role="status"></p>
         </div>
 
@@ -300,7 +309,8 @@
   </aside>
 
   <div class="sheet-backdrop" id="paywallBackdrop" hidden></div>
-  <aside class="bottom-sheet paywall-sheet" id="paywallSheet" aria-labelledby="paywallTitle" aria-modal="true" role="dialog" hidden>
+  <aside class="bottom-sheet paywall-sheet" id="paywallSheet" aria-labelledby="paywallTitle" aria-modal="true"
+    role="dialog" hidden>
     <div class="sheet-handle" aria-hidden="true"></div>
     <div class="paywall-header">
       <p class="studio">Flores Production Studios</p>
@@ -310,7 +320,8 @@
 
     <div class="plan-stack" id="planList"></div>
     <p class="status-text" id="paywallStatus" role="status"></p>
-    <button class="button button-primary" id="subscribeButton" type="button" data-action="subscribe" disabled>Subscribe Now</button>
+    <button class="button button-primary" id="subscribeButton" type="button" data-action="subscribe" disabled>Subscribe
+      Now</button>
     <button class="button button-ghost" type="button" data-action="close-paywall">Maybe Later</button>
   </aside>
 
